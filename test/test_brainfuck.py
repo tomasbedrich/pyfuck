@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 
+
 import unittest
+import logging
 from pyfuck.brainfuck import Brainfuck
+
 
 class TestBrainfuck(unittest.TestCase):
 
@@ -11,8 +14,9 @@ class TestBrainfuck(unittest.TestCase):
     def test_eval(self):
         program = "++++++++++[>+++++++>++++++++++>+++>+<<<<-]>++.>+.+++++++..+++.>++.<<+++++++++++++++.>.+++.------.--------.>+.>."
         res = self.bf.eval(program)
-        self.assertEquals(res, "Hello World!")
+        self.assertEqual(res, "Hello World!")
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.DEBUG)
     unittest.main()
