@@ -3,6 +3,8 @@
 
 import unittest
 import logging
+import io
+
 from pyfuck.brainfuck import Brainfuck
 
 
@@ -10,11 +12,16 @@ class TestBrainfuck(unittest.TestCase):
 
     def setUp(self):
         self.bf = Brainfuck()
+        self.stdout = io.StringIO() # output buffer
 
     def test_eval(self):
         program = "++++++++++[>+++++++>++++++++++>+++>+<<<<-]>++.>+.+++++++..+++.>++.<<+++++++++++++++.>.+++.------.--------.>+.>."
-        res = self.bf.eval(program)
-        self.assertEqual(res, "Hello World!")
+        self.bf.eval(program, stdout=self.stdout)
+        self.assertEqual(self.stdout.getvalue(), "Hello World!\n")
+
+
+    def tearDown(self):
+        self.stdout.close()
 
 
 if __name__ == "__main__":
