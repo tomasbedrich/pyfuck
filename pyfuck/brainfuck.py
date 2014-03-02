@@ -4,6 +4,7 @@
 
 import logging
 import sys
+from collections import namedtuple
 # TODO use https://github.com/Feneric/doxypypy
 
 
@@ -12,7 +13,7 @@ class Brainfuck(object):
     """
     Represents a basic Brainfuck! interpreter.
 
-    Brainfuck syntax:
+    Brainfuck! syntax:
     >   increment the data pointer (to point to the next cell to the right).
     <   decrement the data pointer (to point to the next cell to the left).
     +   increment (increase by one) the byte at the data pointer.
@@ -21,6 +22,7 @@ class Brainfuck(object):
     ,   accept one byte of input, storing its value in the byte at the data pointer.
     [   if the byte at the data pointer is zero, then instead of moving the instruction pointer forward to the next command, jump it forward to the command after the matching ] command.
     ]   if the byte at the data pointer is nonzero, then instead of moving the instruction pointer forward to the next command, jump it back to the command after the matching [ command.
+    !   everything after this character is considered as user input.
 
     Author:
         Tomas Bedrich
@@ -33,7 +35,7 @@ class Brainfuck(object):
     """
 
 
-    COMMANDS = "<>+-.,[]!"
+    COMMANDS = "<>+-.,[]"
 
 
     def __init__(self):
@@ -73,12 +75,43 @@ class Brainfuck(object):
 
         return _getch
 
-    def _compile(self, program):
+
+    def preprocess(self, program):
         """
-        'Compiles' Brainfuck! code.
+        Preprocesses the Brainfuck! program.
+
+        The extended Brainfuck syntax describes the exclemation mark as separator for program and user input.
+        Especially useful for testing.
 
         Args:
             program: A string with Brainfuck! program.
+
+        Returns:
+            A named tuple of program and user input.
+
+        Examples:
+            >>> b.preprocess(",+.!a")
+            Program(program=',+.', input='a')
+            >>> b.preprocess("...!a!b")
+            Program(program='...', input='a!b')
+            >>> b.preprocess("++")
+            Program(program='++', input='')
+            >>> b.preprocess("!abc")
+            Program(program='', input='abc')
+        """
+        try:
+            program, input = program.split("!", 1)
+        except ValueError:
+            input = ""
+        return namedtuple("Program", ['program', 'input'])(program, input)
+
+
+    def _compile(self, program):
+        """
+        'Compiles' Brainfuck code.
+
+        Args:
+            program: A string with Brainfuck program.
 
         Returns:
             Two dimensional array with commands and possible jump destinations.
@@ -124,32 +157,41 @@ class Brainfuck(object):
 
         Args:
             program: A string with Brainfuck! program.
-            stdout: Output destination. Passed as to print() function. Default is sys.stdout.
+            stdout: Output destination. Passed to print() function. Default is sys.stdout.
             stdin: Input source. Any iterator returning individual chars can be passed. Default is sys.stdin.
 
         Examples:
             >>> b.eval("++++++++++[>+++++++>++++++++++>+++>+<<<<-]>++.>+.+++++++..+++.>++.<<+++++++++++++++.>.+++.------.--------.>+.>.")
             Hello World!
-            >>> b.eval(",+.", stdin=iter("a"))
+            >>> b.eval(",+.", stdin="a")
             b
-            >>> b.eval(",", stdin=iter(""))
+            >>> b.eval(",+.!a")
+            b
+            >>> b.eval("+[,.--------------------------------]", stdin="brainfuck_rulez! ")
+            brainfuck_rulez! 
+            >>> b.eval(",", stdin="")
             Traceback (most recent call last):
             ...
             EOFError: More input required.
         """
-        pc = 0 # = program counter
-        cc = 0 # = cell counter
-        cc_max = 0 # = cell counter max
-        cells = bytearray(1)
-        compiled = self._compile(program)
+        preprocessed = self.preprocess(program)
+        compiled = self._compile(preprocessed.program)
 
         if stdout is None:
             stdout = sys.stdout
         
-        try:
-            stdin = iter(stdin)
-        except TypeError:
-            stdin = None
+        if preprocessed.input:
+            stdin = iter(preprocessed.input)
+        else:
+            try:
+                stdin = iter(stdin)
+            except TypeError:
+                stdin = None
+
+        pc = 0 # = program counter
+        cc = 0 # = cell counter
+        cc_max = 0 # = cell counter max
+        cells = bytearray(1)
 
         while True:
 
@@ -203,11 +245,6 @@ class Brainfuck(object):
             elif command is "]":
                 if cells[cc] is not 0:
                     pc = compiled[pc][1]
-
-            # data separator
-            elif command is "!":
-                # TODO
-                pass
 
             pc += 1
 
