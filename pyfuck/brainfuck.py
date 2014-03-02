@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 
 
+
 import logging
 import sys
-# TODO use doctest and https://github.com/Feneric/doxypypy
+# TODO use https://github.com/Feneric/doxypypy
+
+
 
 class Brainfuck(object):
     """
@@ -29,11 +32,14 @@ class Brainfuck(object):
         # TODO
     """
 
+
     COMMANDS = "<>+-.,[]!"
+
 
     def __init__(self):
         super(Brainfuck, self).__init__()
         self._getch = Brainfuck._find_getch()
+
 
     @staticmethod
     def _find_getch():
@@ -78,7 +84,6 @@ class Brainfuck(object):
             Two dimensional array with commands and possible jump destinations.
 
         Examples:
-            >>> b = Brainfuck()
             >>> b._compile("+-.")
             [['+', 0], ['-', 0], ['.', 0]]
             >>> b._compile("comment.")
@@ -123,8 +128,14 @@ class Brainfuck(object):
             stdin: Input source. Any iterator returning individual chars can be passed. Default is sys.stdin.
 
         Examples:
-            >>> Brainfuck().eval("++++++++++[>+++++++>++++++++++>+++>+<<<<-]>++.>+.+++++++..+++.>++.<<+++++++++++++++.>.+++.------.--------.>+.>.")
+            >>> b.eval("++++++++++[>+++++++>++++++++++>+++>+<<<<-]>++.>+.+++++++..+++.>++.<<+++++++++++++++.>.+++.------.--------.>+.>.")
             Hello World!
+            >>> b.eval(",+.", stdin=iter("a"))
+            b
+            >>> b.eval(",", stdin=iter(""))
+            Traceback (most recent call last):
+            ...
+            EOFError: More input required.
         """
         pc = 0 # = program counter
         cc = 0 # = cell counter
@@ -201,9 +212,11 @@ class Brainfuck(object):
             pc += 1
 
 
+
 def main():
     logging.basicConfig(level=logging.INFO)
     # TODO
+
 
 
 if __name__ == '__main__':
