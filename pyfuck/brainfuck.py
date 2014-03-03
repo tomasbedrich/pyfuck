@@ -169,6 +169,9 @@ class Brainfuck(object):
             b
             >>> b.eval("+[,.--------------------------------]", stdin="brainfuck_rulez! ")
             brainfuck_rulez! 
+            >>> # cell underflow and overflow detection
+            >>> b.eval("-,.", stdin="a")
+            a
             >>> b.eval(",", stdin="")
             Traceback (most recent call last):
             ...
@@ -215,11 +218,17 @@ class Brainfuck(object):
 
             # increment
             elif command is "+":
-                cells[cc] += 1
+                if cells[cc] < 255:
+                    cells[cc] += 1
+                else:
+                    cells[cc] = 0
 
             # decrement
             elif command is "-":
-                cells[cc] -= 1
+                if cells[cc] > 0:
+                    cells[cc] -= 1
+                else:
+                    cells[cc] = 255
 
             # output current cc
             elif command is ".":
@@ -237,14 +246,12 @@ class Brainfuck(object):
                 cells[cc] = ord(_)
 
             # while current is not 0
-            elif command is "[":
-                if cells[cc] is 0:
-                    pc = compiled[pc][1]
+            elif command is "[" and cells[cc] is 0:
+                pc = compiled[pc][1]
 
             # end while
-            elif command is "]":
-                if cells[cc] is not 0:
-                    pc = compiled[pc][1]
+            elif command is "]" and cells[cc] is not 0:
+                pc = compiled[pc][1]
 
             pc += 1
 
