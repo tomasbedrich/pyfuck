@@ -160,6 +160,9 @@ class Brainfuck(object):
             stdout: Output destination. Passed to print() function. Default is sys.stdout.
             stdin: Input source. Any iterator returning individual chars can be passed. Default is sys.stdin.
 
+        Raises:
+            EOFError, ValueError
+
         Examples:
             >>> b.eval("++++++++++[>+++++++>++++++++++>+++>+<<<<-]>++.>+.+++++++..+++.>++.<<+++++++++++++++.>.+++.------.--------.>+.>.")
             Hello World!

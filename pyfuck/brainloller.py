@@ -3,29 +3,9 @@
 
 
 import logging
-from collections import namedtuple
 
 from pyfuck.png import PNG
-
-
-
-class Command(object):
-    """
-    Holds one Brainloller command.
-
-    Author:
-        Tomas Bedrich
-    """
-
-
-    def __init__(self, color, command):
-        super(Command, self).__init__()
-        self.color = color
-        self.command = command
-
-
-    def __eq__(self, other):
-        return isinstance(Command, other) and self.color == other.color and self.command == other.command
+from pyfuck.brainfuck import Brainfuck
 
 
 
@@ -41,37 +21,86 @@ class Brainloller(object):
     """
 
 
-    COMMANDS = (
-        Command((255, 0, 0), ">"), # red
-        Command((128, 0, 0), "<"), # darkred
-        Command((0, 255, 0), "+"), # green
-        Command((0, 128, 0), "-"), # darkgreen
-        Command((0, 0, 255), "."), # blue
-        Command((0, 0, 128), ","), # darkblue
-        Command((255, 255, 0), "["), # yellow
-        Command((128, 128, 0), "]"), # darkyellow
-        Command((0, 255, 255), "R"), # cyan
-        Command((0, 128, 128), "L") # darkcyan
-    )
+    COMMANDS = {
+        (255, 0, 0): ">", # red
+        (128, 0, 0): "<", # darkred
+        (0, 255, 0): "+", # green
+        (0, 128, 0): "-", # darkgreen
+        (0, 0, 255): ".", # blue
+        (0, 0, 128): ",", # darkblue
+        (255, 255, 0): "[", # yellow
+        (128, 128, 0): "]", # darkyellow
+        (0, 255, 255): "R", # cyan
+        (0, 128, 128): "L" # darkcyan
+    }
 
 
     def __init__(self):
         super(Brainloller, self).__init__()
+        self.brainfuck = Brainfuck()
 
 
     def eval(self, image, stdout=None, stdin=None):
         """
         Evaluates the Brainloller program stored in image.
 
+        See:
+            pyfuck.brainfuck.Brainfuck.eval()
+
         Args:
             image: An image containing the Brainloller program.
-            stdout: Output destination. Passed to print() function. Default is sys.stdout.
-            stdin: Input source. Any iterator returning individual chars can be passed. Default is sys.stdin.
+            stdout: see Brainfuck.eval()
+            stdin: see Brainfuck.eval()
+
+        Raises:
+            AttributeError, EOFError, ValueError
 
         Examples:
-            # TODO
+            # TODO download hello_world.png in simplified PNG format
+            >>> image = PNG("test/assets/hello_world.png")
+            >>> b.eval(image)
+            Hello World!
         """
-        pass
+        if not isinstance(image, PNG):
+            raise AttributeError("Image is not an instance of pyfuck.png.PNG.")
+
+        program = list()
+
+        pcX = 0 # = program counter X
+        pcY = 0 # = program counter Y
+        NORTH, EAST, SOUTH, WEST = range(4)
+        way = EAST # program counter way
+
+        while (0 <= pcX < image.header.width) and (0 <= pcY < image.header.height):
+
+            colour = image.pixels[pcY][pcX]
+            command = self.COMMANDS.get(colour)
+
+            logging.debug("Processing pixel at [{},{}], colour {} - command: {}".format(pcX, pcY, colour, command))
+
+            # rotate right
+            if command is "R":
+                way = (way + 1) if way < 3 else 0
+
+            # rotate left
+            elif command is "L":
+                way = (way - 1) if way > 0 else 3
+
+            # command
+            elif command is not None:
+                program.append(command)
+
+            # program counter depends on the way
+            if way == EAST:
+                pcX += 1
+            elif way == SOUTH:
+                pcY += 1
+            elif way == WEST:
+                pcX -= 1
+            else:
+                pcY -= 1
+
+        self.brainfuck.eval("".join(program), stdout, stdin)
 
 
 
