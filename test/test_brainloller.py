@@ -8,22 +8,22 @@ import logging
 import io
 
 import pyfuck
-from pyfuck.brainfuck import Brainfuck
+from pyfuck.brainloller import Brainloller
 
 
 
-class TestBrainfuck(unittest.TestCase):
+class TestBrainloller(unittest.TestCase):
 
 
     def setUp(self):
-        self.bf = Brainfuck()
+        self.bl = Brainloller()
 
 
     def test_doctests(self):
         """
         Runs doctests.
         """
-        result = doctest.testmod(pyfuck.brainfuck, extraglobs={"b": self.bf})
+        result = doctest.testmod(pyfuck.brainloller, extraglobs={"b": self.bl})
         self.assertEqual(result.failed, 0)
 
 

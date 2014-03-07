@@ -148,6 +148,9 @@ class PNG(object):
 class Chunk(object):
     """
     Represents a PNG chunk.
+    
+    Author:
+        Tomas Bedrich
 
     Examples:
         >>> len = 28
@@ -287,6 +290,9 @@ class IHDR(Chunk):
 class ValidationException(BaseException):
     """
     Raised in case of invalid PNG file.
+    
+    Author:
+        Tomas Bedrich
     """
     pass
         
