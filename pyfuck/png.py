@@ -26,7 +26,7 @@ class PNG(object):
          [(255, 255, 255), (127, 127, 127), (0, 0, 0)],
          [(255, 255, 0), (255, 0, 255), (0, 255, 255)]]
 
-        >>> PNG("test/assets/hello_world.png") #doctest: +SKIP
+        >>> PNG("test/assets/hello_world.png").pixels
 
         >>> PNG("test/assets/not.found") #doctest: +ELLIPSIS
         Traceback (most recent call last):
@@ -103,24 +103,30 @@ class PNG(object):
             else:
                 self.chunks.append(Chunk(len, type, data, crc))
 
-        # if not self.header.isSimplified():
-            # err("The file is not a simplified PNG:\n" + str(self.header) + \
-                # "\nSupported bit depth: 8, colour type: 2. No compression, filter nor interlace.")
+        if not self.header.isSimplified():
+            err("The file is not a simplified PNG:\n" + str(self.header) + \
+                "\nSupported values are: bit depth: 1, 2, 4, 8; colour type: 2, 3; compression: 0; filter: 0; interlace: 0.")
 
         try:
             self.decompressed = zlib.decompress(b"".join(chunk.data for chunk in self.chunks if chunk.type == b"IDAT"))
         except zlib.error:
             err("PNG data cannot be decompressed.")
 
-        # one line = (filter, WIDTH * (R, G, B) )
-        rgb = 3 # 3 color components
-        lineLength = 1 + self.header.width * rgb
-        # "breaking the rules, breaking the rules..." - sorry PEP8 :)
-        self.pixels = [ \
-            [ \
-                tuple(map(int, self.decompressed[ y*lineLength+x : y*lineLength+x+rgb ])) for x in range(1, lineLength, rgb) \
-            ] for y in range(self.header.height) \
-        ]
+        # each pixel is an R,G,B triple
+        if self.header.colour == 2:
+            # one line = (filter, WIDTH * (R, G, B) )
+            rgb = 3 # 3 color components
+            lineLength = 1 + self.header.width * rgb
+            # "breaking the rules, breaking the rules..." - sorry PEP8 :)
+            self.pixels = [ \
+                [ \
+                    tuple(self.decompressed[ y*lineLength+x : y*lineLength+x+rgb ]) for x in range(1, lineLength, rgb) \
+                ] for y in range(self.header.height) \
+            ]
+
+        # each pixel is a palette index
+        elif self.header.colour == 3:
+            self.pixels = None
 
 
     def _reader(self):
@@ -177,7 +183,7 @@ class Chunk(object):
         self.len = len
         self.type = type
         self.data = data
-        self.crc = self._parseInt(crc, 0, 4)
+        self.crc = parseInt(crc, 0, 4)
         if not self.isValid():
             raise ValidationException("The chunk is not valid:\n" + str(self))
 
@@ -190,25 +196,6 @@ class Chunk(object):
             True if this chunk is valid.
         """
         return len(self.type) == 4 and float(self.len).is_integer() and self.crc == zlib.crc32(self.type + self.data)
-
-
-    def _parseInt(self, bytes, start=0, len=1):
-        """
-        Args:
-            bytes: bytes to create integer from
-            start: where to start
-            len: how many bytes to parse
-
-        Returns:
-            Integer parsed from bytes.
-
-        Examples:
-            >>> Chunk._parseInt(None, b"\\xa6")
-            166
-            >>> Chunk._parseInt(None, b"\\xa6\\xffu", 0, 2)
-            42751
-        """
-        return int.from_bytes(bytes[start:start+len], BYTEORDER)
 
 
     def __str__(self):
@@ -257,7 +244,7 @@ class IHDR(Chunk):
 
     def __init__(self, data, crc):
         def get(start, len):
-            return self._parseInt(data, start, len)
+            return parseInt(data, start, len)
         self.width = get(0, 4)
         self.height = get(4, 4)
         self.depth = get(8, 1)
@@ -277,7 +264,8 @@ class IHDR(Chunk):
         Returns:
             True if this IHDR describes simplified PNG image.
         """
-        return (self.depth == 8) and (self.colour == 2) and (not self.compression) and (not self.filter) and (not self.interlace)
+        return self.depth in (1, 2, 4, 8) and self.colour in (2, 3) \
+            and not self.compression and not self.filter and not self.interlace
 
 
     def __str__(self):
@@ -317,10 +305,9 @@ class PLTE(Chunk):
 
 
     def __init__(self, len, data, crc):
-        def get(start):
-            return self._parseInt(data, start)
         super(PLTE, self).__init__(len, b"PLTE", data, crc)
-        self.palette = [ (get(3 * i), get(3 * i + 1), get(3 * i + 2)) for i in range(self.len // 3)]
+        rgb = 3 # 3 color components
+        self.palette = [ tuple(parseInt(data, 3 * i + j) for j in range(rgb)) for i in range(self.len // rgb)]
 
 
     def isValid(self):
@@ -341,4 +328,57 @@ class ValidationException(BaseException):
         Tomas Bedrich
     """
     pass
-        
+
+
+
+def parseInt(data, start=0, len=1):
+    """
+    Args:
+        data: bytes to create integer from
+        start: where to start
+        len: how many bytes to parse
+
+    Returns:
+        Integer parsed from bytes.
+
+    Examples:
+        >>> parseInt(b"\\xa6")
+        166
+        >>> parseInt(b"\\xa6\\xffu", 0, 2)
+        42751
+    """
+    return int.from_bytes(data[start:start+len], BYTEORDER)
+
+
+
+def bitReader(data):
+    """
+    A bit reader.
+
+    This is generator object which recieves number of bit to read.
+    Aligns the data to 8 bits!
+
+    Args:
+        data: bytes to read from
+
+    Returns:
+        Array of integers (0 or 1) read from data.
+
+    Examples:
+        >>> reader = bitReader(b'\\x03')
+        >>> next(reader) # initiate generator
+        >>> reader.send(8)
+        [0, 0, 0, 0, 0, 0, 1, 1]
+    """
+    if not isinstance(data, bytes):
+        return
+
+    def bit():
+        for byte in data:
+            for i in reversed(range(8)):
+                yield (byte >> i) & 1
+
+    howMuch = yield
+    bit = bit()
+    while True:
+        howMuch = yield [next(bit) for _ in range(howMuch)]
