@@ -21,11 +21,12 @@ class PNG(object):
         Tomas Bedrich
 
     Examples:
-        >>> image = PNG("test/assets/squares.png")
-        >>> image.pixels #doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        >>> PNG("test/assets/squares.png").pixels #doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
         [[(255, 0, 0), (0, 255, 0), (0, 0, 255)],
          [(255, 255, 255), (127, 127, 127), (0, 0, 0)],
          [(255, 255, 0), (255, 0, 255), (0, 255, 255)]]
+
+        >>> PNG("test/assets/hello_world.png") #doctest: +SKIP
 
         >>> PNG("test/assets/not.found") #doctest: +ELLIPSIS
         Traceback (most recent call last):
@@ -95,14 +96,16 @@ class PNG(object):
             # create chunk object or end
             if type == b"IHDR":
                 self.header = IHDR(data, crc)
+            elif type == b"PLTE":
+                self.palette = PLTE(len, data, crc)
             elif type == b"IEND":
                 break
             else:
                 self.chunks.append(Chunk(len, type, data, crc))
 
-        if not self.header.isSimplified():
-            err("The file is not a simplified PNG:\n" + str(self.header) + \
-                "\nSupported bit depth: 8, colour type: 2. No compression, filter nor interlace.")
+        # if not self.header.isSimplified():
+            # err("The file is not a simplified PNG:\n" + str(self.header) + \
+                # "\nSupported bit depth: 8, colour type: 2. No compression, filter nor interlace.")
 
         try:
             self.decompressed = zlib.decompress(b"".join(chunk.data for chunk in self.chunks if chunk.type == b"IDAT"))
@@ -239,8 +242,6 @@ class IHDR(Chunk):
 
     Examples:
         >>> ch = IHDR(b'\\x00\\x00\\x00\\x03\\x00\\x00\\x00\\x03\\x08\\x02\\x00\\x00\\x00', b'\\xd9J"\\xe8')
-        >>> ch.isValid()
-        True
         >>> ch.isSimplified()
         True
         >>> ch.width
@@ -288,6 +289,47 @@ class IHDR(Chunk):
             "compression method: {}\n".format(self.compression) + \
             "filter method: {}\n".format(self.filter) + \
             "interlace method: {}".format(self.interlace)
+
+
+
+class PLTE(Chunk):
+    """
+    Represents an PLTE chunk.
+
+    This chunk contains 1 to 256 palette entries each:
+    - red: 1 byte
+    - green: 1 byte
+    - blue: 1 byte
+
+    See:
+        http://www.w3.org/TR/PNG/#11PLTE
+
+    Author:
+        Tomas Bedrich
+
+    Examples:
+        # TODO shorter PLTE example
+        >>> len = 30
+        >>> data = b'\\x00\\xff\\x00\\x00\\x80\\x00\\xff\\x00\\x00\\x00\\xff\\xff\\x00\\x00\\xff\\x80\\x00\\x00\\x00\\x80\\x80\\x00\\x00\\x00\\xff\\xff\\x00\\x80\\x80\\x00'
+        >>> PLTE(len, data, (612999920).to_bytes(4, 'big')).palette #doctest: +ELLIPSIS
+        [(0, 255, 0), (0, 128, 0), (255, 0, 0), ... (128, 128, 0)]
+    """
+
+
+    def __init__(self, len, data, crc):
+        def get(start):
+            return self._parseInt(data, start)
+        super(PLTE, self).__init__(len, b"PLTE", data, crc)
+        self.palette = [ (get(3 * i), get(3 * i + 1), get(3 * i + 2)) for i in range(self.len // 3)]
+
+
+    def isValid(self):
+        return super(PLTE, self).isValid() and (0 < self.len <= 256 * 3) and (self.len % 3 == 0)
+
+
+    def __str__(self):
+        return super(PLTE, self).__str__() + "\n" + \
+            "palette: {}".format(self.palette)
 
 
 
