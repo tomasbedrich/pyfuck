@@ -105,7 +105,7 @@ class PNG(object):
                 "\nSupported bit depth: 8, colour type: 2. No compression, filter nor interlace.")
 
         try:
-            self.decompressed = zlib.decompress(b"".join(chunk.data for chunk in self.chunks))
+            self.decompressed = zlib.decompress(b"".join(chunk.data for chunk in self.chunks if chunk.type == b"IDAT"))
         except zlib.error:
             err("PNG data cannot be decompressed.")
 
