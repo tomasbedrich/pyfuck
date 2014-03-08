@@ -157,18 +157,42 @@ class PNG(object):
 
 
     def filterSub(self, x, a):
+        """
+        Sub filter reconstruction function.
+
+        See:
+            http://www.w3.org/TR/PNG/#9-table91
+        """
         return x + a
 
 
     def filterUp(self, x, b):
+        """
+        Up filter reconstruction function.
+
+        See:
+            http://www.w3.org/TR/PNG/#9-table91
+        """
         return x + b
 
 
     def filterAverage(self, x, a, b):
+        """
+        Average filter reconstruction function.
+
+        See:
+            http://www.w3.org/TR/PNG/#9-table91
+        """
         return x + floor((a + b) / 2)
 
 
     def filterPaeth(self, x, a, b, c):
+        """
+        Paeth filter reconstruction function.
+
+        See:
+            http://www.w3.org/TR/PNG/#9-table91
+        """
         p = a + b - c
         pa = abs(p - a)
         pb = abs(p - b)
