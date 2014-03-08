@@ -40,6 +40,7 @@ class PNG(object):
 
 
     SIGNATURE = b'\x89PNG\r\n\x1a\n'
+    # TODO chunk len (and more) constants
 
 
     def __init__(self, filename):
@@ -104,20 +105,80 @@ class PNG(object):
             err("The file is not a simplified PNG:\n" + str(self.header) + \
                 "\nSupported bit depth: 8, colour type: 2. No compression, filter nor interlace.")
 
+        # decompress
         try:
             self.decompressed = zlib.decompress(b"".join(chunk.data for chunk in self.chunks if chunk.type == b"IDAT"))
         except zlib.error:
             err("PNG data cannot be decompressed.")
 
-        # one line = (filter, WIDTH * (R, G, B) )
+        # scanline extraction
+        # one line = filter + WIDTH * (R, G, B) bytes
         rgb = 3 # 3 color components
         lineLength = 1 + self.header.width * rgb
-        # "breaking the rules, breaking the rules..." - sorry PEP8 :)
-        self.pixels = [ \
-            [ \
-                tuple(map(int, self.decompressed[ y*lineLength+x : y*lineLength+x+rgb ])) for x in range(1, lineLength, rgb) \
-            ] for y in range(self.header.height) \
-        ]
+        self.scanlines = [[self.decompressed[y * lineLength + x] for x in range(0, lineLength)] for y in range(self.header.height)]
+
+        # filter reconstruction
+        self.bytes = list()
+        for y, scanline in enumerate(self.scanlines):
+            res = list()
+            for x, byte in enumerate(scanline):
+                if x == 0:
+                    fil = byte
+                    continue
+                if fil:
+                    a = x - rgb if x > rgb + 1 else 0
+                    if a:
+                        a = self.scanlines[y][a]
+                    b = y - 1 if y > 1 else 0
+                    if b:
+                        b = self.scanlines[b][x]
+                    c = b - rgb if b > rgb + 1 else 0
+                    if c:
+                        c = self.scanlines[b][c]
+                    if fil == 1: # sub
+                        byte = self.filterSub(byte, a)
+                    elif fil == 2: # up
+                        byte = self.filterUp(byte, b)
+                    elif fil == 3: # average
+                        byte = self.filterAverage(byte, a, b)
+                    elif fil == 4: # paeth
+                        byte = self.filterPaeth(byte, a, b, c)
+
+                    # overflow and underflow detection
+                    if byte > 255:
+                        byte = 255
+                    elif byte < 0:
+                        byte = 0
+                res.append(byte)
+            self.bytes.append(res)
+
+        # group bytes to pixels
+        self.pixels = [[tuple(row[x:x+rgb]) for x in range(0, self.header.width * rgb, rgb)] for row in self.bytes]
+
+
+    def filterSub(self, x, a):
+        return x + a
+
+
+    def filterUp(self, x, b):
+        return x + b
+
+
+    def filterAverage(self, x, a, b):
+        return x + floor((a + b) / 2)
+
+
+    def filterPaeth(self, x, a, b, c):
+        p = a + b - c
+        pa = abs(p - a)
+        pb = abs(p - b)
+        pc = abs(p - c)
+        if pa <= pb and pa <= pc:
+            return a
+        elif pb <= pc:
+            return b
+        else:
+            return c
 
 
     def _reader(self):
