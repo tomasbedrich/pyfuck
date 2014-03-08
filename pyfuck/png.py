@@ -255,7 +255,6 @@ class IHDR(Chunk):
 
 
     def __init__(self, data, crc):
-        super(IHDR, self).__init__(13, b"IHDR", data, crc)
         def get(start, len):
             return self._parseInt(data, start, len)
         self.width = get(0, 4)
@@ -265,6 +264,11 @@ class IHDR(Chunk):
         self.compression = get(10, 1)
         self.filter = get(11, 1)
         self.interlace = get(12, 1)
+        super(IHDR, self).__init__(13, b"IHDR", data, crc)
+
+
+    def isValid(self):
+        return super(IHDR, self).isValid() and self.width != 0 and self.height != 0
 
 
     def isSimplified(self):

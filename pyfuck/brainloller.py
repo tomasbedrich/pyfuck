@@ -57,8 +57,8 @@ class Brainloller(object):
 
         Examples:
             # TODO download hello_world.png in simplified PNG format
-            >>> image = PNG("test/assets/hello_world.png")
-            >>> b.eval(image)
+            >>> image = PNG("test/assets/hello_world.png") #doctest: +SKIP
+            >>> b.eval(image) #doctest: +SKIP
             Hello World!
         """
         if not isinstance(image, PNG):
