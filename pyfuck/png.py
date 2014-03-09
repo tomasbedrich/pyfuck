@@ -7,6 +7,7 @@ import zlib
 
 
 BYTEORDER = "big" # PNG is big endian
+RGB = 3 # 3 color components
 
 
 
@@ -44,7 +45,9 @@ class PNG(object):
 
 
     SIGNATURE = b'\x89PNG\r\n\x1a\n'
-    # TODO chunk len (and more) constants
+    CHUNK_LEN = 4 # bytes
+    CHUNK_TYPE = 4 # bytes
+    CHUNK_CRC = 4 # bytes
 
 
     def __init__(self, filename):
@@ -73,7 +76,7 @@ class PNG(object):
         next(reader)
 
         # validate header
-        if reader.send(8) != PNG.SIGNATURE:
+        if reader.send(len(PNG.SIGNATURE)) != PNG.SIGNATURE:
             err("The file is not a valid PNG image (signature doesn't match).")
 
         self.chunks = list()
@@ -81,12 +84,12 @@ class PNG(object):
 
             # read length
             try:
-                length = int.from_bytes(reader.send(4), BYTEORDER)
+                length = int.from_bytes(reader.send(PNG.CHUNK_LEN), BYTEORDER)
             except StopIteration:
                 err("Unexpected file end.")
 
             # read type
-            type = reader.send(4)
+            type = reader.send(PNG.CHUNK_TYPE)
 
             # read data
             if length > 0:
@@ -95,7 +98,7 @@ class PNG(object):
                 data = b""
 
             # read CRC
-            crc = reader.send(4)
+            crc = reader.send(PNG.CHUNK_CRC)
 
             # create chunk object or end
             if type == b"IHDR":
@@ -117,12 +120,10 @@ class PNG(object):
         except zlib.error:
             err("PNG data cannot be decompressed.")
 
-        rgb = 3 # 3 color components
-
         # scanline extraction
         if self.header.colour == 2: # truecolour
             # one line length = (filter + width * (R, G, B) * depth / 8 (in bytes)
-            lineLength = 1 + self.header.width * rgb * self.header.depth // 8
+            lineLength = 1 + self.header.width * RGB * self.header.depth // 8
         elif self.header.colour == 3: # indexed-colour
             lineLength = 1 + self.header.width * self.header.depth // 8
 
@@ -137,13 +138,13 @@ class PNG(object):
                     fil = byte
                     continue
                 if fil:
-                    a = x - rgb if x > rgb + 1 else 0
+                    a = x - RGB if x > RGB + 1 else 0
                     if a:
                         a = self.scanlines[y][a]
                     b = y - 1 if y > 1 else 0
                     if b:
                         b = self.scanlines[b][x]
-                    c = b - rgb if b > rgb + 1 else 0
+                    c = b - RGB if b > RGB + 1 else 0
                     if c:
                         c = self.scanlines[b][c]
                     if fil == 1: # sub
@@ -167,7 +168,7 @@ class PNG(object):
 
         # group bytes to pixels
         if self.header.colour == 2: # truecolour
-            self.pixels = [[tuple(row[x:x+rgb]) for x in range(0, len(row), rgb)] for row in self.bytes]
+            self.pixels = [[tuple(row[x:x+RGB]) for x in range(0, len(row), RGB)] for row in self.bytes]
         elif self.header.colour == 3: # indexed-colour
             def getColour(index):
                 return self.palette.palette[index]
@@ -401,8 +402,8 @@ class PLTE(Chunk):
 
     def __init__(self, len, data, crc):
         super(PLTE, self).__init__(len, b"PLTE", data, crc)
-        rgb = 3 # 3 color components
-        self.palette = [ tuple(parseInt(data, 3 * i + j) for j in range(rgb)) for i in range(self.len // rgb)]
+        RGB = 3 # 3 color components
+        self.palette = [ tuple(parseInt(data, 3 * i + j) for j in range(RGB)) for i in range(self.len // RGB)]
 
 
     def isValid(self):
