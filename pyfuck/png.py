@@ -26,7 +26,10 @@ class PNG(object):
          [(255, 255, 255), (127, 127, 127), (0, 0, 0)],
          [(255, 255, 0), (255, 0, 255), (0, 255, 255)]]
 
-        >>> PNG("test/assets/hello_world.png").pixels
+        >>> PNG("test/assets/hello_world.png").pixels #doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        [[(255, 0, 0), (0, 255, 0), (0, 255, 0),
+         ...
+         (0, 128, 0), (0, 128, 0), (0, 255, 255)]]
 
         >>> PNG("test/assets/not.found") #doctest: +ELLIPSIS
         Traceback (most recent call last):
@@ -76,9 +79,9 @@ class PNG(object):
         self.chunks = list()
         while True:
 
-            # read len
+            # read length
             try:
-                len = int.from_bytes(reader.send(4), BYTEORDER)
+                length = int.from_bytes(reader.send(4), BYTEORDER)
             except StopIteration:
                 err("Unexpected file end.")
 
@@ -86,8 +89,8 @@ class PNG(object):
             type = reader.send(4)
 
             # read data
-            if len > 0:
-                data = reader.send(len)
+            if length > 0:
+                data = reader.send(length)
             else:
                 data = b""
 
@@ -98,11 +101,11 @@ class PNG(object):
             if type == b"IHDR":
                 self.header = IHDR(data, crc)
             elif type == b"PLTE":
-                self.palette = PLTE(len, data, crc)
+                self.palette = PLTE(length, data, crc)
             elif type == b"IEND":
                 break
             else:
-                self.chunks.append(Chunk(len, type, data, crc))
+                self.chunks.append(Chunk(length, type, data, crc))
 
         if not self.header.isSimplified():
             err("The file is not a simplified PNG:\n" + str(self.header) + \
@@ -114,10 +117,15 @@ class PNG(object):
         except zlib.error:
             err("PNG data cannot be decompressed.")
 
-        # scanline extraction
-        # one line = filter + WIDTH * (R, G, B) bytes
         rgb = 3 # 3 color components
-        lineLength = 1 + self.header.width * rgb
+
+        # scanline extraction
+        if self.header.colour == 2: # truecolour
+            # one line length = (filter + width * (R, G, B) * depth / 8 (in bytes)
+            lineLength = 1 + self.header.width * rgb * self.header.depth // 8
+        elif self.header.colour == 3: # indexed-colour
+            lineLength = 1 + self.header.width * self.header.depth // 8
+
         self.scanlines = [[self.decompressed[y * lineLength + x] for x in range(0, lineLength)] for y in range(self.header.height)]
 
         # filter reconstruction
@@ -155,8 +163,16 @@ class PNG(object):
                 res.append(byte)
             self.bytes.append(res)
 
+        self.pixels = None
+
         # group bytes to pixels
-        self.pixels = [[tuple(row[x:x+rgb]) for x in range(0, self.header.width * rgb, rgb)] for row in self.bytes]
+        if self.header.colour == 2: # truecolour
+            self.pixels = [[tuple(row[x:x+rgb]) for x in range(0, len(row), rgb)] for row in self.bytes]
+        elif self.header.colour == 3: # indexed-colour
+            def getColour(index):
+                return self.palette.palette[index]
+            shifts = list(reversed(range(0, 8, self.header.depth)))
+            self.pixels = [[getColour(row[i // len(shifts)] >> shift & 2 ** self.header.depth - 1) for i, shift in enumerate(len(row) * shifts)] for row in self.bytes]
 
 
     def filterSub(self, x, a):
