@@ -56,9 +56,8 @@ class Brainloller(object):
             AttributeError, EOFError, ValueError
 
         Examples:
-            # TODO download hello_world.png in simplified PNG format
-            >>> image = PNG("test/assets/hello_world.png") #doctest: +SKIP
-            >>> b.eval(image) #doctest: +SKIP
+            >>> image = PNG("test/assets/hello_world.png")
+            >>> b.eval(image)
             Hello World!
         """
         if not isinstance(image, PNG):
