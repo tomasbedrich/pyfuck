@@ -3,6 +3,7 @@
 
 
 import zlib
+from math import floor
 
 
 
@@ -60,6 +61,7 @@ class PNG(object):
         self._parse()
 
 
+    # TODO refactoring: too long method
     def _parse(self):
         """
         Parses the PNG and saves data in readable form for further manipulations.
@@ -134,37 +136,21 @@ class PNG(object):
         for y, scanline in enumerate(self.scanlines):
             res = list()
             for x, byte in enumerate(scanline):
-                if x == 0:
+                if x == 0: # set filter for each scanline
                     fil = byte
                     continue
                 if fil:
-                    a = x - RGB if x > RGB + 1 else 0
-                    if a:
-                        a = self.scanlines[y][a]
-                    b = y - 1 if y > 1 else 0
-                    if b:
-                        b = self.scanlines[b][x]
-                    c = b - RGB if b > RGB + 1 else 0
-                    if c:
-                        c = self.scanlines[b][c]
                     if fil == 1: # sub
-                        byte = self.filterSub(byte, a)
+                        byte = self._filterSub(x, y)
                     elif fil == 2: # up
-                        byte = self.filterUp(byte, b)
+                        byte = self._filterUp(x, y)
                     elif fil == 3: # average
-                        byte = self.filterAverage(byte, a, b)
+                        byte = self._filterAverage(x, y)
                     elif fil == 4: # paeth
-                        byte = self.filterPaeth(byte, a, b, c)
-
-                    # overflow and underflow detection
-                    if byte > 255:
-                        byte = 255
-                    elif byte < 0:
-                        byte = 0
+                        byte = self._filterPaeth(x, y)
+                self.scanlines[y][x] = byte
                 res.append(byte)
             self.bytes.append(res)
-
-        self.pixels = None
 
         # group bytes to pixels
         if self.header.colour == 2: # truecolour
@@ -176,53 +162,90 @@ class PNG(object):
             self.pixels = [[getColour(row[i // len(shifts)] >> shift & 2 ** self.header.depth - 1) for i, shift in enumerate(len(row) * shifts)] for row in self.bytes]
 
 
-    def filterSub(self, x, a):
+    def _getA(self, x, y):
+        if x > RGB:
+            return self.scanlines[y][x - RGB]
+        else:
+            return 0
+
+
+    def _getB(self, x, y):
+        if y > 0:
+            return self.scanlines[y - 1][x]
+        else:
+            return 0
+
+
+    def _getC(self, x, y):
+        if x > RGB and y > 0:
+            return self.scanlines[y - 1][x - RGB]
+        else:
+            return 0
+
+
+    def _filterSub(self, x, y):
         """
         Sub filter reconstruction function.
 
         See:
             http://www.w3.org/TR/PNG/#9-table91
+
+        Examples:
+            >>> PNG("test/assets/filterSub.png").pixels[-2][-1]
+            (8, 70, 255)
         """
-        return x + a
+        return (self.scanlines[y][x] + self._getA(x, y)) % 256
 
 
-    def filterUp(self, x, b):
+    def _filterUp(self, x, y):
         """
         Up filter reconstruction function.
 
         See:
             http://www.w3.org/TR/PNG/#9-table91
+
+        Examples:
+            >>> PNG("test/assets/filterUp.png").pixels[-2][-1]
+            (8, 70, 255)
         """
-        return x + b
+        return (self.scanlines[y][x] + self._getB(x, y)) % 256
 
 
-    def filterAverage(self, x, a, b):
+    def _filterAverage(self, x, y):
         """
         Average filter reconstruction function.
 
         See:
             http://www.w3.org/TR/PNG/#9-table91
+
+        Examples:
+            >>> PNG("test/assets/filterAverage.png").pixels[-2][-1]
+            (8, 70, 255)
         """
-        return x + floor((a + b) / 2)
+        return (self.scanlines[y][x] + floor((self._getA(x, y) + self._getB(x, y)) / 2)) % 256
 
 
-    def filterPaeth(self, x, a, b, c):
+    def _filterPaeth(self, x, y):
         """
         Paeth filter reconstruction function.
 
         See:
             http://www.w3.org/TR/PNG/#9-table91
+
+        Examples:
+            >>> PNG("test/assets/filterPaeth.png").pixels[-2][-1]
+            (8, 70, 255)
         """
+        a, b, c = self._getA(x, y), self._getB(x, y), self._getC(x, y)
         p = a + b - c
-        pa = abs(p - a)
-        pb = abs(p - b)
-        pc = abs(p - c)
+        pa, pb, pc = abs(p - a), abs(p - b), abs(p - c)
         if pa <= pb and pa <= pc:
-            return a
+            pr = a
         elif pb <= pc:
-            return b
+            pr = b
         else:
-            return c
+            pr = c
+        return (self.scanlines[y][x] + pr) % 256
 
 
     def _reader(self):
@@ -392,11 +415,10 @@ class PLTE(Chunk):
         Tomas Bedrich
 
     Examples:
-        # TODO shorter PLTE example
-        >>> len = 30
-        >>> data = b'\\x00\\xff\\x00\\x00\\x80\\x00\\xff\\x00\\x00\\x00\\xff\\xff\\x00\\x00\\xff\\x80\\x00\\x00\\x00\\x80\\x80\\x00\\x00\\x00\\xff\\xff\\x00\\x80\\x80\\x00'
-        >>> PLTE(len, data, (612999920).to_bytes(4, 'big')).palette #doctest: +ELLIPSIS
-        [(0, 255, 0), (0, 128, 0), (255, 0, 0), ... (128, 128, 0)]
+        >>> len = 12
+        >>> data = b'\\x00\\xff\\x00\\xff\\x00\\x00\\xff\\xff\\x00\\x00\\x00\\xff'
+        >>> PLTE(len, data, (1698638778).to_bytes(4, 'big')).palette
+        [(0, 255, 0), (255, 0, 0), (255, 255, 0), (0, 0, 255)]
     """
 
 
