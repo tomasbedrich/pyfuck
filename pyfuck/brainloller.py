@@ -79,11 +79,11 @@ class Brainloller(object):
 
             # rotate right
             if command is "R":
-                way = (way + 1) if way < 3 else 0
+                way = (way + 1) % 4
 
             # rotate left
             elif command is "L":
-                way = (way - 1) if way > 0 else 3
+                way = (way - 1) % 4
 
             # command
             elif command is not None:

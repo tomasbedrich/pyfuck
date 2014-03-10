@@ -42,6 +42,18 @@ class PNG(object):
         Traceback (most recent call last):
         ...
         pyfuck.png.ValidationException: ...
+
+        >>> PNG("test/assets/filterSub.png").pixels[-2][-1]
+        (8, 70, 255)
+
+        >>> PNG("test/assets/filterUp.png").pixels[-2][-1]
+        (8, 70, 255)
+
+        >>> PNG("test/assets/filterAverage.png").pixels[-2][-1]
+        (8, 70, 255)
+
+        >>> PNG("test/assets/filterPaeth.png").pixels[-2][-1]
+        (8, 70, 255)
     """
 
 
@@ -132,25 +144,44 @@ class PNG(object):
         self.scanlines = [[self.decompressed[y * lineLength + x] for x in range(0, lineLength)] for y in range(self.header.height)]
 
         # filter reconstruction
-        self.bytes = list()
-        for y, scanline in enumerate(self.scanlines):
-            res = list()
-            for x, byte in enumerate(scanline):
+        self.bytes = self.scanlines[:]
+        for y, row in enumerate(self.bytes):
+            for x, byte in enumerate(row):
                 if x == 0: # set filter for each scanline
                     fil = byte
                     continue
+
                 if fil:
+                    a = self.bytes[y][x - RGB] if x > RGB else 0
+                    b = self.bytes[y - 1][x] if y > 0 else 0
+                    c = self.bytes[y - 1][x - RGB] if x > RGB and y > 0 else 0
+                    
                     if fil == 1: # sub
-                        byte = self._filterSub(x, y)
+                        byte += a
+                    
                     elif fil == 2: # up
-                        byte = self._filterUp(x, y)
+                        byte += b
+                    
                     elif fil == 3: # average
-                        byte = self._filterAverage(x, y)
+                        byte += floor((a + b) / 2)
+
                     elif fil == 4: # paeth
-                        byte = self._filterPaeth(x, y)
-                self.scanlines[y][x] = byte
-                res.append(byte)
-            self.bytes.append(res)
+                        _ = a + b - c
+                        pa, pb, pc = abs(_ - a), abs(_ - b), abs(_ - c)
+                        if pa <= pb and pa <= pc:
+                            _ = a
+                        elif pb <= pc:
+                            _ = b
+                        else:
+                            _ = c
+                        byte += _
+
+                    byte %= 256
+
+                self.bytes[y][x] = byte
+
+        for y, row in enumerate(self.bytes):
+            self.bytes[y] = row[1:]
 
         # group bytes to pixels
         if self.header.colour == 2: # truecolour
@@ -160,92 +191,6 @@ class PNG(object):
                 return self.palette.palette[index]
             shifts = list(reversed(range(0, 8, self.header.depth)))
             self.pixels = [[getColour(row[i // len(shifts)] >> shift & 2 ** self.header.depth - 1) for i, shift in enumerate(len(row) * shifts)] for row in self.bytes]
-
-
-    def _getA(self, x, y):
-        if x > RGB:
-            return self.scanlines[y][x - RGB]
-        else:
-            return 0
-
-
-    def _getB(self, x, y):
-        if y > 0:
-            return self.scanlines[y - 1][x]
-        else:
-            return 0
-
-
-    def _getC(self, x, y):
-        if x > RGB and y > 0:
-            return self.scanlines[y - 1][x - RGB]
-        else:
-            return 0
-
-
-    def _filterSub(self, x, y):
-        """
-        Sub filter reconstruction function.
-
-        See:
-            http://www.w3.org/TR/PNG/#9-table91
-
-        Examples:
-            >>> PNG("test/assets/filterSub.png").pixels[-2][-1]
-            (8, 70, 255)
-        """
-        return (self.scanlines[y][x] + self._getA(x, y)) % 256
-
-
-    def _filterUp(self, x, y):
-        """
-        Up filter reconstruction function.
-
-        See:
-            http://www.w3.org/TR/PNG/#9-table91
-
-        Examples:
-            >>> PNG("test/assets/filterUp.png").pixels[-2][-1]
-            (8, 70, 255)
-        """
-        return (self.scanlines[y][x] + self._getB(x, y)) % 256
-
-
-    def _filterAverage(self, x, y):
-        """
-        Average filter reconstruction function.
-
-        See:
-            http://www.w3.org/TR/PNG/#9-table91
-
-        Examples:
-            >>> PNG("test/assets/filterAverage.png").pixels[-2][-1]
-            (8, 70, 255)
-        """
-        return (self.scanlines[y][x] + floor((self._getA(x, y) + self._getB(x, y)) / 2)) % 256
-
-
-    def _filterPaeth(self, x, y):
-        """
-        Paeth filter reconstruction function.
-
-        See:
-            http://www.w3.org/TR/PNG/#9-table91
-
-        Examples:
-            >>> PNG("test/assets/filterPaeth.png").pixels[-2][-1]
-            (8, 70, 255)
-        """
-        a, b, c = self._getA(x, y), self._getB(x, y), self._getC(x, y)
-        p = a + b - c
-        pa, pb, pc = abs(p - a), abs(p - b), abs(p - c)
-        if pa <= pb and pa <= pc:
-            pr = a
-        elif pb <= pc:
-            pr = b
-        else:
-            pr = c
-        return (self.scanlines[y][x] + pr) % 256
 
 
     def _reader(self):
