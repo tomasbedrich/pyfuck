@@ -6,6 +6,7 @@ import unittest
 import doctest
 import logging
 import io
+import sys
 
 import pyfuck
 from pyfuck.brainfuck import Brainfuck
@@ -27,7 +28,13 @@ class TestBrainfuck(unittest.TestCase):
         self.assertEqual(result.failed, 0)
 
 
+    @unittest.skipUnless(sys.stdout.isatty(), "Needs interactive shell.")
+    def test_eval(self):
+        print("\nInteractive test - please input characters (end test by pressing space bar):")
+        self.bf.eval("+[,.--------------------------------]")
+
+
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.INFO)
     unittest.main()

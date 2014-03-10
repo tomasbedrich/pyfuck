@@ -28,7 +28,7 @@ class PNG(object):
          [(255, 255, 255), (127, 127, 127), (0, 0, 0)],
          [(255, 255, 0), (255, 0, 255), (0, 255, 255)]]
 
-        >>> PNG("test/assets/hello_world.png").pixels #doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        >>> PNG("test/assets/hello_world_brainloller.png").pixels #doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
         [[(255, 0, 0), (0, 255, 0), (0, 255, 0),
          ...
          (0, 128, 0), (0, 128, 0), (0, 255, 255)]]
@@ -54,6 +54,8 @@ class PNG(object):
 
         >>> PNG("test/assets/filterPaeth.png").pixels[-2][-1]
         (8, 70, 255)
+
+        # TODO add palette test
     """
 
 

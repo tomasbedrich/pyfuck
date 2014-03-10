@@ -236,6 +236,7 @@ class Brainfuck(object):
             # output current cc
             elif command is ".":
                 print(chr(cells[cc]), end="", file=stdout)
+                stdout.flush()
 
             # input and save to current
             elif command is ",":
