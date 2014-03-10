@@ -73,7 +73,6 @@ class PNG(object):
         self._parse()
 
 
-    # TODO refactoring: too long method
     def _parse(self):
         """
         Parses the PNG and saves data in readable form for further manipulations.
@@ -141,11 +140,12 @@ class PNG(object):
         elif self.header.colour == 3: # indexed-colour
             lineLength = 1 + self.header.width * self.header.depth // 8
 
-        self.scanlines = [[self.decompressed[y * lineLength + x] for x in range(0, lineLength)] for y in range(self.header.height)]
+        self.scanlines = [self.decompressed[y * lineLength : (y + 1) * lineLength] for y in range(self.header.height)]
+
+        self.bytes = [list(map(int, row)) for row in self.scanlines]
 
         # filter reconstruction
-        self.bytes = self.scanlines[:]
-        for y, row in enumerate(self.bytes):
+        for y, row in enumerate(self.scanlines):
             for x, byte in enumerate(row):
                 if x == 0: # set filter for each scanline
                     fil = byte
@@ -153,28 +153,29 @@ class PNG(object):
 
                 if fil:
                     a = self.bytes[y][x - RGB] if x > RGB else 0
-                    b = self.bytes[y - 1][x] if y > 0 else 0
-                    c = self.bytes[y - 1][x - RGB] if x > RGB and y > 0 else 0
                     
                     if fil == 1: # sub
                         byte += a
                     
-                    elif fil == 2: # up
-                        byte += b
-                    
-                    elif fil == 3: # average
-                        byte += floor((a + b) / 2)
+                    else:
+                        b = self.bytes[y - 1][x] if y > 0 else 0
 
-                    elif fil == 4: # paeth
-                        _ = a + b - c
-                        pa, pb, pc = abs(_ - a), abs(_ - b), abs(_ - c)
-                        if pa <= pb and pa <= pc:
-                            _ = a
-                        elif pb <= pc:
-                            _ = b
-                        else:
-                            _ = c
-                        byte += _
+                        if fil == 2: # up
+                            byte += b
+                        
+                        elif fil == 3: # average
+                            byte += floor((a + b) / 2)
+
+                        elif fil == 4: # paeth
+                            c = self.bytes[y - 1][x - RGB] if x > RGB and y > 0 else 0
+                            _ = a + b - c
+                            pa, pb, pc = abs(_ - a), abs(_ - b), abs(_ - c)
+                            if pa <= pb and pa <= pc:
+                                byte += a
+                            elif pb <= pc:
+                                byte += b
+                            else:
+                                byte += c
 
                     byte %= 256
 
@@ -445,3 +446,9 @@ def bitReader(data):
     bit = bit()
     while True:
         howMuch = yield [next(bit) for _ in range(howMuch)]
+
+
+
+if __name__ == '__main__':
+    # TODO
+    pass
