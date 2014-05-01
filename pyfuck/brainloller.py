@@ -63,7 +63,7 @@ class Brainloller(object):
         if not isinstance(image, PNG):
             raise AttributeError("Image is not an instance of pyfuck.png.PNG.")
 
-        program = list()
+        program = []
 
         pcX = 0 # = program counter X
         pcY = 0 # = program counter Y

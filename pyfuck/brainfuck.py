@@ -125,8 +125,8 @@ class Brainfuck(object):
             [['.', 0], ['[', 2], [']', 1]]
         """
         skipped = 0
-        compiled = list()
-        stack = list()
+        compiled = []
+        stack = []
 
         for pos, command in enumerate(program):
 
