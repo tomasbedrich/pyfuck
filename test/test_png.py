@@ -18,7 +18,8 @@ class TestPNG(unittest.TestCase):
         """
         Runs doctests.
         """
-        result = doctest.testmod(pyfuck.png)
+        import random
+        result = doctest.testmod(pyfuck.png, extraglobs={"random": random})
         self.assertEqual(result.failed, 0)
 
 

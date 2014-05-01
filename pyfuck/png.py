@@ -8,7 +8,7 @@ from math import floor
 
 
 BYTEORDER = "big" # PNG is big endian
-RGB = 3 # 3 color components
+RGB = 3 # 3 colour components
 
 
 
@@ -24,7 +24,7 @@ class PNG(object):
     """
 
 
-    SIGNATURE = b'\x89PNG\r\n\x1a\n'
+    SIGNATURE = b"\x89PNG\r\n\x1a\n"
     CHUNK_LEN = 4 # bytes
     CHUNK_TYPE = 4 # bytes
     CHUNK_CRC = 4 # bytes
@@ -32,6 +32,9 @@ class PNG(object):
 
     def __init__(self):
         super(PNG, self).__init__()
+        PNG.IEND = Chunk(0, b"IEND", b"", b"\xaeB`\x82")
+
+        self.header = None
 
 
     def load(self, filename):
@@ -42,7 +45,7 @@ class PNG(object):
             filename: source
 
         Examples:
-            >>> PNG().load("test/assets/squares.png").pixels #doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+            >>> PNG().load("test/assets/squares.png").pixels #doctest: +NORMALIZE_WHITESPACE
             [[(255, 0, 0), (0, 255, 0), (0, 0, 255)],
              [(255, 255, 255), (127, 127, 127), (0, 0, 0)],
              [(255, 255, 0), (255, 0, 255), (0, 255, 255)]]
@@ -66,39 +69,45 @@ class PNG(object):
 
         Args:
             filename: destination
+
+        Raises:
+            IOError
+
+        Examples:
+            >>> p = PNG()
+            >>> colours = (255, 0, 0), (0, 255, 0), (0, 0, 255)
+            >>> p.pixels = [[random.choice(colours) for x in range(3)] for y in range(3)]
+            >>> p.save("test/assets/saved.png")
         """
         self.filename = filename
         self._write()
-        return self
 
 
     def _read(self):
         """
-        Parses the PNG and saves data in readable form for further manipulations.
+        Parses the PNG and saves data to self for further manipulations.
 
         Raises:
             pyfuck.png.ValidationException
+            IOError
         """
 
-        def err(msg):
-            raise ValidationException("'{}': ".format(self.filename) + msg)
-
-        # initiate generator
+        # init generator
         reader = self._reader()
         next(reader)
 
         # validate header
         if reader.send(len(PNG.SIGNATURE)) != PNG.SIGNATURE:
-            err("The file is not a valid PNG image (signature doesn't match).")
+            self._err("The file is not a valid PNG image (signature doesn't match).")
 
-        self.chunks = list()
+        chunks = []
         while True:
 
             # read length
             try:
                 length = int.from_bytes(reader.send(PNG.CHUNK_LEN), BYTEORDER)
             except StopIteration:
-                err("Unexpected file end.")
+                self._err("Unexpected file end.")
 
             # read type
             type = reader.send(PNG.CHUNK_TYPE)
@@ -120,17 +129,21 @@ class PNG(object):
             elif type == b"IEND":
                 break
             else:
-                self.chunks.append(Chunk(length, type, data, crc))
+                # raises exception if not valid
+                chunks.append(Chunk(length, type, data, crc))
+
+        if not self.header:
+            self._err("Missing PNG header.")
 
         if not self.header.isSimplified():
-            err("The file is not a simplified PNG:\n" + str(self.header) + \
+            self._err("The file is not a simplified PNG:\n" + str(self.header) + \
                 "\nSupported values are: bit depth: 1, 2, 4, 8; colour type: 2, 3; compression: 0; filter: 0; interlace: 0.")
 
         # decompress
         try:
-            self.decompressed = zlib.decompress(b"".join(chunk.data for chunk in self.chunks if chunk.type == b"IDAT"))
+            decompressed = zlib.decompress(b"".join(chunk.data for chunk in chunks if chunk.type == b"IDAT"))
         except zlib.error:
-            err("PNG data cannot be decompressed.")
+            self._err("PNG data cannot be decompressed.")
 
         # scanline extraction
         if self.header.colour == 2: # truecolour
@@ -139,25 +152,25 @@ class PNG(object):
         elif self.header.colour == 3: # indexed-colour
             lineLength = 1 + self.header.width * self.header.depth // 8
 
-        self.scanlines = [self.decompressed[y * lineLength : (y + 1) * lineLength] for y in range(self.header.height)]
+        scanlines = [decompressed[y * lineLength : (y + 1) * lineLength] for y in range(self.header.height)]
 
-        self.bytes = [list(map(int, row)) for row in self.scanlines]
+        raw = [list(map(int, row)) for row in scanlines]
 
         # filter reconstruction
-        for y, row in enumerate(self.scanlines):
+        for y, row in enumerate(scanlines):
             for x, byte in enumerate(row):
                 if x == 0: # set filter for each scanline
                     fil = byte
                     continue
 
                 if fil:
-                    a = self.bytes[y][x - RGB] if x > RGB else 0
+                    a = raw[y][x - RGB] if x > RGB else 0
                     
                     if fil == 1: # sub
                         byte += a
                     
                     else:
-                        b = self.bytes[y - 1][x] if y > 0 else 0
+                        b = raw[y - 1][x] if y > 0 else 0
 
                         if fil == 2: # up
                             byte += b
@@ -166,7 +179,7 @@ class PNG(object):
                             byte += floor((a + b) / 2)
 
                         elif fil == 4: # paeth
-                            c = self.bytes[y - 1][x - RGB] if x > RGB and y > 0 else 0
+                            c = raw[y - 1][x - RGB] if x > RGB and y > 0 else 0
                             _ = a + b - c
                             pa, pb, pc = abs(_ - a), abs(_ - b), abs(_ - c)
                             if pa <= pb and pa <= pc:
@@ -178,19 +191,50 @@ class PNG(object):
 
                     byte %= 256
 
-                self.bytes[y][x] = byte
+                raw[y][x] = byte
 
-        for y, row in enumerate(self.bytes):
-            self.bytes[y] = row[1:]
+        for y, row in enumerate(raw):
+            raw[y] = row[1:]
 
         # group bytes to pixels
         if self.header.colour == 2: # truecolour
-            self.pixels = [[tuple(row[x:x+RGB]) for x in range(0, len(row), RGB)] for row in self.bytes]
+            self._pixels = [[tuple(row[x:x+RGB]) for x in range(0, len(row), RGB)] for row in raw]
         elif self.header.colour == 3: # indexed-colour
             def getColour(index):
                 return self.palette.palette[index]
             shifts = list(reversed(range(0, 8, self.header.depth)))
-            self.pixels = [[getColour(row[i // len(shifts)] >> shift & 2 ** self.header.depth - 1) for i, shift in enumerate(len(row) * shifts)] for row in self.bytes]
+            self._pixels = [[getColour(row[i // len(shifts)] >> shift & 2 ** self.header.depth - 1) for i, shift in enumerate(len(row) * shifts)] for row in raw]
+
+
+    def _write(self):
+        """
+        Outputs data from self to file - aka writes the PNG file.
+        """
+
+        # init generator
+        writer = self._writer()
+        next(writer)
+
+        writer.send(PNG.SIGNATURE)
+
+        # generate raw bytes
+        raw = bytearray()
+        for row in self._pixels:
+            raw.append(0) # filter 0
+            for pixel in row:
+                raw.extend(pixel)
+
+        # write header
+        writer.send(self.header)
+
+        # write data
+        type = b"IDAT"
+        compressed = zlib.compress(raw)
+        crc = zlib.crc32(type + compressed).to_bytes(4, BYTEORDER)
+        length = len(compressed)
+        writer.send(Chunk(length, type, compressed, crc))
+
+        writer.send(PNG.IEND)
 
 
     def _reader(self):
@@ -210,6 +254,64 @@ class PNG(object):
                 if not howMuch:
                     howMuch = 1
                 byte = f.read(howMuch)
+
+
+    def _writer(self):
+        """
+        Binary file writer.
+
+        This is generator object which recieves bytes to write.
+
+        Returns:
+            A generator object.
+        """
+        data = True
+        with open(self.filename, "wb") as f:
+            while data:
+                data = yield
+                f.write(bytes(data))
+
+
+    @property
+    def pixels(self):
+        return self._pixels
+
+
+    @pixels.setter
+    def pixels(self, value):
+        """
+        Image data (pixels) setter.
+
+        Raises:
+            pyfuck.png.ValidationException
+        """
+
+        # validation
+        prevLen = len(value[0])
+
+        # for each line
+        for row in value:
+            if len(row) != prevLen:
+                raise ValidationException("The image is not rectangular.")
+            prevLen = len(row)
+
+            # for each pixel
+            for pixel in row:
+                if len(pixel) != RGB:
+                    raise ValidationException("Does your RGB display really have {} colour components?".format(len(pixel)))
+
+                # for each colour component
+                for component in pixel:
+                    if not 0 <= component <= 255:
+                        raise ValidationException("Invalid colour value.")
+
+        # seems ok
+        self._pixels = value
+        self.header = IHDR.initSimplified(prevLen, len(value))
+
+
+    def _err(self, msg):
+        raise ValidationException("'{}': ".format(self.filename) + msg)
 
 
     def __str__(self):
@@ -262,6 +364,15 @@ class Chunk(object):
         return len(self.type) == 4 and float(self.len).is_integer() and self.crc == zlib.crc32(self.type + self.data)
 
 
+    def __bytes__(self):
+        res = bytes()
+        res += self.len.to_bytes(4, BYTEORDER)
+        res += self.type
+        res += self.data
+        res += self.crc.to_bytes(4, BYTEORDER)
+        return res
+
+
     def __str__(self):
         return super(Chunk, self).__str__() + "\n" + \
             "len: {}\n".format(self.len) + \
@@ -306,6 +417,9 @@ class IHDR(Chunk):
     """
 
 
+    TYPE = b"IHDR"
+
+
     def __init__(self, data, crc):
         def get(start, len):
             return parseInt(data, start, len)
@@ -316,11 +430,27 @@ class IHDR(Chunk):
         self.compression = get(10, 1)
         self.filter = get(11, 1)
         self.interlace = get(12, 1)
-        super(IHDR, self).__init__(13, b"IHDR", data, crc)
+        super(IHDR, self).__init__(13, IHDR.TYPE, data, crc)
+
+
+    @classmethod
+    def initSimplified(cls, width, height):
+        def get(data, len):
+            return data.to_bytes(len, BYTEORDER)
+        
+        data = bytes()
+        data += get(width, 4) # width
+        data += get(height, 4) # height
+        data += get(8, 1) # depth
+        data += get(2, 1) # colour
+        data += get(0, 1) # compression
+        data += get(0, 1) # filter
+        data += get(0, 1) # interlace
+        return cls(data, get(zlib.crc32(cls.TYPE + data), 4))
 
 
     def isValid(self):
-        return super(IHDR, self).isValid() and self.width != 0 and self.height != 0
+        return super(IHDR, self).isValid() and self.width and self.height
 
 
     def isSimplified(self):
@@ -367,9 +497,12 @@ class PLTE(Chunk):
     """
 
 
+    TYPE = b"PLTE"
+
+
     def __init__(self, len, data, crc):
-        super(PLTE, self).__init__(len, b"PLTE", data, crc)
-        RGB = 3 # 3 color components
+        super(PLTE, self).__init__(len, PLTE.TYPE, data, crc)
+        RGB = 3 # 3 colour components
         self.palette = [ tuple(parseInt(data, 3 * i + j) for j in range(RGB)) for i in range(self.len // RGB)]
 
 

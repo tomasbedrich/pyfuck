@@ -32,7 +32,7 @@ class TestBraincopter(unittest.TestCase):
     @unittest.skipUnless(sys.stdout.isatty(), "Needs interactive shell.")
     def test_eval(self):
         logging.info("Loading PNG...")
-        image = PNG("test/assets/lost_kingdom.png")
+        image = PNG().load("test/assets/lost_kingdom.png")
         logging.info("PNG load done.")
         Braincopter().eval(image)
 
