@@ -21,41 +21,6 @@ class PNG(object):
 
     Author:
         Tomas Bedrich
-
-    Examples:
-        >>> PNG("test/assets/squares.png").pixels #doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-        [[(255, 0, 0), (0, 255, 0), (0, 0, 255)],
-         [(255, 255, 255), (127, 127, 127), (0, 0, 0)],
-         [(255, 255, 0), (255, 0, 255), (0, 255, 255)]]
-
-        >>> PNG("test/assets/hello_world_brainloller.png").pixels #doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-        [[(255, 0, 0), (0, 255, 0), (0, 255, 0),
-         ...
-         (0, 128, 0), (0, 128, 0), (0, 255, 255)]]
-
-        >>> PNG("test/assets/not.found") #doctest: +ELLIPSIS
-        Traceback (most recent call last):
-        ...
-        FileNotFoundError: ...
-
-        >>> PNG("test/assets/bad.png") #doctest: +ELLIPSIS
-        Traceback (most recent call last):
-        ...
-        pyfuck.png.ValidationException: ...
-
-        >>> PNG("test/assets/filterSub.png").pixels[-2][-1]
-        (8, 70, 255)
-
-        >>> PNG("test/assets/filterUp.png").pixels[-2][-1]
-        (8, 70, 255)
-
-        >>> PNG("test/assets/filterAverage.png").pixels[-2][-1]
-        (8, 70, 255)
-
-        >>> PNG("test/assets/filterPaeth.png").pixels[-2][-1]
-        (8, 70, 255)
-
-        # TODO add palette test
     """
 
 
@@ -65,17 +30,49 @@ class PNG(object):
     CHUNK_CRC = 4 # bytes
 
 
-    def __init__(self, filename):
-        """
-        Args:
-            filename: PNG file to load
-        """
+    def __init__(self):
         super(PNG, self).__init__()
+
+
+    def load(self, filename):
+        """
+        Loads a PNG file to actual instance.
+
+        Args:
+            filename: source
+
+        Examples:
+            >>> PNG().load("test/assets/squares.png").pixels #doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+            [[(255, 0, 0), (0, 255, 0), (0, 0, 255)],
+             [(255, 255, 255), (127, 127, 127), (0, 0, 0)],
+             [(255, 255, 0), (255, 0, 255), (0, 255, 255)]]
+
+            >>> PNG().load("test/assets/bad.png") #doctest: +ELLIPSIS
+            Traceback (most recent call last):
+            pyfuck.png.ValidationException: ...
+
+            >>> PNG().load("test/assets/not.found") #doctest: +ELLIPSIS
+            Traceback (most recent call last):
+            FileNotFoundError: ...
+        """
         self.filename = filename
-        self._parse()
+        self._read()
+        return self
 
 
-    def _parse(self):
+    def save(self, filename):
+        """
+        Saves an instance as a PNG file.
+
+        Args:
+            filename: destination
+        """
+        self.filename = filename
+        self._write()
+        return self
+
+
+    def _read(self):
         """
         Parses the PNG and saves data in readable form for further manipulations.
 

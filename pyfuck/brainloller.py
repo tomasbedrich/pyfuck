@@ -56,7 +56,7 @@ class Brainloller(object):
             AttributeError, EOFError, ValueError
 
         Examples:
-            >>> image = PNG("test/assets/hello_world_brainloller.png")
+            >>> image = PNG().load("test/assets/hello_world_brainloller.png")
             >>> b.eval(image)
             Hello World!
         """
