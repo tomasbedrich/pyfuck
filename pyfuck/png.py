@@ -4,6 +4,7 @@
 
 import zlib
 from math import floor
+from io import IOBase
 
 
 
@@ -37,18 +38,34 @@ class PNG(object):
         self.header = None
 
 
-    def load(self, filename):
+    def _open(self, target, mode = "rb"):
+        if issubclass(type(target), IOBase):
+            self.filename = target.name
+            self.file = target
+        else:
+            self.filename = target
+            self.file = open(self.filename, mode)
+
+
+    def load(self, target):
         """
         Loads a PNG file to actual instance.
 
         Args:
-            filename: source
+            target: source
+
+        Raises:
+            pyfuck.png.ValidationException
+            IOError
 
         Examples:
             >>> PNG().load("test/assets/squares.png").pixels #doctest: +NORMALIZE_WHITESPACE
             [[(255, 0, 0), (0, 255, 0), (0, 0, 255)],
              [(255, 255, 255), (127, 127, 127), (0, 0, 0)],
              [(255, 255, 0), (255, 0, 255), (0, 255, 255)]]
+
+            >>> PNG().load(open("test/assets/squares.png", "rb")).pixels #doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+            [[(255, 0, 0), ... (0, 255, 255)]]
 
             >>> PNG().load("test/assets/bad.png") #doctest: +ELLIPSIS
             Traceback (most recent call last):
@@ -58,17 +75,17 @@ class PNG(object):
             Traceback (most recent call last):
             FileNotFoundError: ...
         """
-        self.filename = filename
+        self._open(target, "rb")
         self._read()
         return self
 
 
-    def save(self, filename):
+    def save(self, target):
         """
         Saves an instance as a PNG file.
 
         Args:
-            filename: destination
+            target: destination
 
         Raises:
             IOError
@@ -79,7 +96,7 @@ class PNG(object):
             >>> p.pixels = [[random.choice(colours) for x in range(3)] for y in range(3)]
             >>> p.save("test/assets/saved.png")
         """
-        self.filename = filename
+        self._open(target, "wb")
         self._write()
 
 
@@ -246,14 +263,14 @@ class PNG(object):
         Returns:
             A generator object.
         """
-        with open(self.filename, "rb") as f:
+        with self.file:
             howMuch = yield
-            byte = f.read(howMuch)
+            byte = self.file.read(howMuch)
             while byte != b"":
                 howMuch = yield byte
                 if not howMuch:
                     howMuch = 1
-                byte = f.read(howMuch)
+                byte = self.file.read(howMuch)
 
 
     def _writer(self):
@@ -266,10 +283,10 @@ class PNG(object):
             A generator object.
         """
         data = True
-        with open(self.filename, "wb") as f:
+        with self.file:
             while data:
                 data = yield
-                f.write(bytes(data))
+                self.file.write(bytes(data))
 
 
     @property
