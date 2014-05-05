@@ -55,8 +55,7 @@ class PNG(object):
             target: source
 
         Raises:
-            pyfuck.png.ValidationException
-            IOError
+            pyfuck.png.ValidationException, IOError
 
         Examples:
             >>> PNG().load("test/assets/squares.png").pixels #doctest: +NORMALIZE_WHITESPACE
@@ -105,8 +104,7 @@ class PNG(object):
         Parses the PNG and saves data to self for further manipulations.
 
         Raises:
-            pyfuck.png.ValidationException
-            IOError
+            pyfuck.png.ValidationException, IOError
         """
 
         # init generator

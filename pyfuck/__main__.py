@@ -1,12 +1,41 @@
 #!/usr/bin/env python3
 
 
+
 import argparse
 import sys
 
+from pyfuck.png import PNG, ValidationException
+from pyfuck.brainloller import Brainloller
+
+
+# for determining image type: braincopter / brainloller
+THRESHOLD = 0.8 # percent
+
+
+def source_type(target):
+    try:
+        image = PNG().load(target)
+
+        i = 0
+        score = 0
+        stop = len(image.pixels) * THRESHOLD
+        for y, row in enumerate(image.pixels):
+            for pixel in row:
+                i += 1
+                if pixel in Brainloller.COMMANDS:
+                    score += 1
+            if y > stop:
+                break
+
+        return (i * THRESHOLD) < score and "brainloller" or "braincopter"
+
+    except ValidationException:
+        return "brainfuck"
+
 
 def run(args):
-    pass
+    print(source_type(args.source))
 
 
 def convert(args):
@@ -24,7 +53,7 @@ parser_common.add_argument(
     "source",
     type=argparse.FileType(),
     nargs="?",
-    default=sys.stdin,
+    default=sys.stdin.buffer.raw,
     help="Source file to interpret (default: sys.stdin).")
 # parser_common.add_argument(
 #     "-v", "--verbose",
