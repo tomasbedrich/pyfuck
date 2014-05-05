@@ -37,6 +37,7 @@ class Interpreter(object):
         # type manually set or plaing brainfuck => load either contents or image
         if self.type == "brainfuck":
             try:
+                self.source.seek(0)
                 with self.source as f:
                     self.contents = f.read().decode()
             except UnicodeDecodeError as e:
