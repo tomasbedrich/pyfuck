@@ -38,7 +38,7 @@ class PNG(object):
         self.header = None
 
 
-    def _open(self, target, mode = "rb"):
+    def _open(self, target, mode="rb"):
         if issubclass(type(target), IOBase):
             self.filename = target.name
             self.file = target
@@ -261,14 +261,13 @@ class PNG(object):
         Returns:
             A generator object.
         """
-        with self.file:
-            howMuch = yield
+        howMuch = yield
+        byte = self.file.read(howMuch)
+        while byte != b"":
+            howMuch = yield byte
+            if not howMuch:
+                howMuch = 1
             byte = self.file.read(howMuch)
-            while byte != b"":
-                howMuch = yield byte
-                if not howMuch:
-                    howMuch = 1
-                byte = self.file.read(howMuch)
 
 
     def _writer(self):
@@ -281,10 +280,9 @@ class PNG(object):
             A generator object.
         """
         data = True
-        with self.file:
-            while data:
-                data = yield
-                self.file.write(bytes(data))
+        while data:
+            data = yield
+            self.file.write(bytes(data))
 
 
     @property

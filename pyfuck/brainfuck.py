@@ -161,7 +161,7 @@ class Brainfuck(object):
             stdin: Input source. Any iterator returning individual chars can be passed. Default is sys.stdin.
 
         Raises:
-            EOFError, ValueError
+            EOFError, ValueError, IndexError
 
         Examples:
             >>> b.eval("++++++++++[>+++++++>++++++++++>+++>+<<<<-]>++.>+.+++++++..+++.>++.<<+++++++++++++++.>.+++.------.--------.>+.>.")
