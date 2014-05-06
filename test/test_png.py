@@ -22,10 +22,11 @@ class TestPNG(unittest.TestCase):
         """
         Tests PNG line filtering.
         """
-        self.assertEqual(PNG().load("test/assets/filterSub.png").pixels[-2][-1], (8, 70, 255))
-        self.assertEqual(PNG().load("test/assets/filterUp.png").pixels[-2][-1], (8, 70, 255))
-        self.assertEqual(PNG().load("test/assets/filterAverage.png").pixels[-2][-1], (8, 70, 255))
-        self.assertEqual(PNG().load("test/assets/filterPaeth.png").pixels[-2][-1], (8, 70, 255))
+        p = PNG()
+        self.assertEqual(p.load("test/assets/filterSub.png").pixels[-2][-1], (8, 70, 255))
+        self.assertEqual(p.load("test/assets/filterUp.png").pixels[-2][-1], (8, 70, 255))
+        self.assertEqual(p.load("test/assets/filterAverage.png").pixels[-2][-1], (8, 70, 255))
+        self.assertEqual(p.load("test/assets/filterPaeth.png").pixels[-2][-1], (8, 70, 255))
 
     # TODO add palette test
 

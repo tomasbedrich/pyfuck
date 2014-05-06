@@ -36,10 +36,15 @@ class PNG(object):
         self.close = False
 
     def __del__(self):
+        self._close()
+
+    def _close(self):
         if self.close:
             self.file.close()
+            self.close = False
 
     def _open(self, target, mode="rb"):
+        self._close()
         if issubclass(type(target), IOBase):
             self.filename = target.name
             self.file = target

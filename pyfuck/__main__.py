@@ -104,9 +104,6 @@ class Interpreter(object):
         if not self.contents and not self.image:
             return
 
-        def out(data):
-            self.destination.write(data)
-
         def outText(data):
             self.destination.write(data.encode())
 

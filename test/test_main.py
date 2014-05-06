@@ -19,11 +19,11 @@ class TestInterpreter(unittest.TestCase):
 
     def setUp(self):
         # replace stdout and save orig
-        self.orig = sys.stdout
+        self.origout = sys.stdout
 
     def tearDown(self):
         # revert changes
-        sys.stdout = self.orig
+        sys.stdout = self.origout
 
     def test_run(self):
         # try to run each hello world
@@ -56,6 +56,13 @@ class TestInterpreter(unittest.TestCase):
 
                 # cleanup
                 unlink(tmp.name)
+
+    def test_stdinout(self):
+        sys.stdout = io.StringIO()
+        sys.stdin = open("test/assets/hello_world.brainfuck")
+        args = main.parser_main.parse_args(["run"])
+        main.Interpreter(args).run()
+        self.assertEqual("Hello World!\n", sys.stdout.getvalue())
 
 
 logging.basicConfig(level=logging.INFO)
