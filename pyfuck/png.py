@@ -128,10 +128,7 @@ class PNG(object):
         while True:
 
             # read length
-            try:
-                length = int.from_bytes(reader.send(PNG.CHUNK_LEN), BYTEORDER)
-            except StopIteration:
-                self._err("Unexpected file end.")
+            length = int.from_bytes(reader.send(PNG.CHUNK_LEN), BYTEORDER)
 
             # read type
             type = reader.send(PNG.CHUNK_TYPE)
@@ -277,6 +274,8 @@ class PNG(object):
             if not howMuch:
                 howMuch = 1
             byte = self.file.read(howMuch)
+
+        self._err("Unexpected file end.")
 
 
     def _writer(self):

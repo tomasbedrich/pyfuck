@@ -53,8 +53,16 @@ class Interpreter(object):
             self.image = PNG().load(self.source)
 
         # load braincopter target as image
-        if hasattr(self, "target"):
-            self.target = PNG().load(self.target)
+        if hasattr(self, "target") and self.target:
+            with self.target:
+                image = PNG().load(self.target)
+            self.target = image
+
+
+    def __del__(self):
+        self.source.close()
+        if hasattr(self, "destination"):
+            self.destination.close()
 
 
     def guess_type(self, target):
@@ -130,7 +138,7 @@ class Interpreter(object):
                 outText(self.brainloller.to_brainfuck(self.image))
 
             elif self.output == "brainloller":
-                self.image.save(self.destination) # FIXME
+                self.image.save(self.destination)
 
             elif self.output == "braincopter":
                 self.braincopter.to_braincopter(self.brainloller.to_brainfuck(self.image), self.target).save(self.destination)
@@ -145,7 +153,7 @@ class Interpreter(object):
                 self.brainloller.to_brainloller(self.braincopter.to_brainfuck(self.image)).save(self.destination)
 
             elif self.output == "braincopter":
-                self.image.save(self.destination) # FIXME
+                self.image.save(self.destination)
 
 
 # common parser ====================================
