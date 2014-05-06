@@ -58,7 +58,7 @@ class Brainloller(object):
             A Brainfuck program
 
         Examples:
-            >>> image = PNG().load("test/assets/hello_world_brainloller.png")
+            >>> image = PNG().load("test/assets/hello_world.brainloller.png")
             >>> program = Brainloller().to_brainfuck(image)
             >>> Brainfuck().eval(program)
             Hello World!

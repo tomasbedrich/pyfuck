@@ -29,9 +29,9 @@ class TestBrainloller(unittest.TestCase):
 
 
     def test_to_brainloller(self):
-        with open("test/assets/hello_world.bf") as f:
+        with open("test/assets/hello_world.brainfuck") as f:
             image = Brainloller().to_brainloller(f.read())
-        ref = PNG().load("test/assets/hello_world_brainloller_inline.png")
+        ref = PNG().load("test/assets/hello_world.brainloller.png")
         self.assertEqual(ref, image)
 
 

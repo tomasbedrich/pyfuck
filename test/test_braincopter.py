@@ -32,7 +32,7 @@ class TestBraincopter(unittest.TestCase):
 
     def test_to_braincopter(self):
         bc = Braincopter()
-        with open("test/assets/hello_world.bf") as f:
+        with open("test/assets/hello_world.brainfuck") as f:
             contents = f.read()
         target = PNG().load("test/assets/palette.png")
         res = bc.to_braincopter(contents, target)
