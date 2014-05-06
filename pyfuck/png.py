@@ -608,5 +608,4 @@ def bitReader(data):
 
 
 if __name__ == '__main__':
-    # TODO
-    pass
+    print("This file is not meant to be executed directly. Please use it as a module instead.")

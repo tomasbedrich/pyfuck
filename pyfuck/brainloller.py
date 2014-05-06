@@ -134,11 +134,5 @@ class Brainloller(object):
 
 
 
-def main():
-    logging.basicConfig(level=logging.INFO)
-    # TODO
-
-
-
 if __name__ == '__main__':
-    main()
+    print("This file is not meant to be executed directly. Please use it as a module instead.")
