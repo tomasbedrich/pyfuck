@@ -36,6 +36,12 @@ class PNG(object):
         PNG.IEND = Chunk(0, b"IEND", b"", b"\xaeB`\x82")
 
         self.header = None
+        self.close = False
+
+
+    def __del__(self):
+        if self.close:
+            self.file.close()
 
 
     def _open(self, target, mode="rb"):
@@ -45,6 +51,7 @@ class PNG(object):
         else:
             self.filename = target
             self.file = open(self.filename, mode)
+            self.close = True
 
 
     def load(self, target):
@@ -63,8 +70,10 @@ class PNG(object):
              [(255, 255, 255), (127, 127, 127), (0, 0, 0)],
              [(255, 255, 0), (255, 0, 255), (0, 255, 255)]]
 
-            >>> PNG().load(open("test/assets/squares.png", "rb")).pixels #doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+            >>> f = open("test/assets/squares.png", "rb") # use with statement instead
+            >>> PNG().load(f).pixels #doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
             [[(255, 0, 0), ... (0, 255, 255)]]
+            >>> f.close()
 
             >>> PNG().load("test/assets/bad.png") #doctest: +ELLIPSIS
             Traceback (most recent call last):

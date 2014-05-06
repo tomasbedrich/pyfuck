@@ -142,10 +142,11 @@ parser_conversion.add_argument(
 
 
 # MAIN ==================================================================================================
-if len(sys.argv) == 1:
-    parser_main.parse_args(["-h"])
-
-logging.basicConfig(level=logging.INFO)
-args = parser_main.parse_args()
-interpreter = Interpreter(args)
-getattr(interpreter, args.func)()
+if __name__ == '__main__':
+    if len(sys.argv) > 1:
+        logging.basicConfig(level=logging.INFO)
+        args = parser_main.parse_args()
+        interpreter = Interpreter(args)
+        getattr(interpreter, args.func)()
+    else:
+        parser_main.parse_args(["-h"])
