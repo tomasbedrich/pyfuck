@@ -16,10 +16,6 @@ from pyfuck.brainfuck import Brainfuck
 class TestBrainfuck(unittest.TestCase):
 
 
-    def setUpClass():
-        logging.basicConfig(level=logging.INFO)
-
-
     def setUp(self):
         self.bf = Brainfuck()
 

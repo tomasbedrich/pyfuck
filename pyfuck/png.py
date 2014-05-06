@@ -2,6 +2,7 @@
 
 
 
+import logging
 import zlib
 from math import floor
 from io import IOBase
@@ -115,6 +116,7 @@ class PNG(object):
         Raises:
             pyfuck.png.ValidationException, IOError
         """
+        logging.debug("PNG reading started.")
 
         # init generator
         reader = self._reader()
@@ -123,6 +125,8 @@ class PNG(object):
         # validate header
         if reader.send(len(PNG.SIGNATURE)) != PNG.SIGNATURE:
             self._err("The file is not a valid PNG image (signature doesn't match).")
+
+        logging.debug("Signature OK.")
 
         chunks = []
         while True:
@@ -153,6 +157,8 @@ class PNG(object):
                 # raises exception if not valid
                 chunks.append(Chunk(length, type, data, crc))
 
+            logging.debug("{} Chunk read OK.".format(type))
+
         if not self.header:
             self._err("Missing PNG header.")
 
@@ -166,6 +172,8 @@ class PNG(object):
         except zlib.error:
             self._err("PNG data cannot be decompressed.")
 
+        logging.debug("Decompressed OK.")
+
         # scanline extraction
         if self.header.colour == 2: # truecolour
             # one line length = (filter + width * (R, G, B) * depth / 8 (in bytes)
@@ -174,6 +182,8 @@ class PNG(object):
             lineLength = 1 + self.header.width * self.header.depth // 8
 
         scanlines = [decompressed[y * lineLength : (y + 1) * lineLength] for y in range(self.header.height)]
+
+        logging.debug("Scanlines extracted OK.")
 
         raw = [list(map(int, row)) for row in scanlines]
 
@@ -217,6 +227,8 @@ class PNG(object):
         for y, row in enumerate(raw):
             raw[y] = row[1:]
 
+        logging.debug("Raw data reconstruction OK.")
+
         # group bytes to pixels
         if self.header.colour == 2: # truecolour
             self._pixels = [[tuple(row[x:x+RGB]) for x in range(0, len(row), RGB)] for row in raw]
@@ -226,17 +238,27 @@ class PNG(object):
             shifts = list(reversed(range(0, 8, self.header.depth)))
             self._pixels = [[getColour(row[i // len(shifts)] >> shift & 2 ** self.header.depth - 1) for i, shift in enumerate(len(row) * shifts)] for row in raw]
 
+        logging.debug("Colour reconstruction OK.")
+        logging.debug("PNG loaded.")
 
     def _write(self):
         """
         Outputs data from self to file - aka writes the PNG file.
         """
+        logging.debug("PNG writing started.")
 
         # init generator
         writer = self._writer()
         next(writer)
 
         writer.send(PNG.SIGNATURE)
+
+        logging.debug("Signature written.")
+
+        # write header
+        writer.send(self.header)
+
+        logging.debug("Header written.")
 
         # generate raw bytes
         raw = bytearray()
@@ -245,9 +267,6 @@ class PNG(object):
             for pixel in row:
                 raw.extend(pixel)
 
-        # write header
-        writer.send(self.header)
-
         # write data
         type = b"IDAT"
         compressed = zlib.compress(raw)
@@ -255,8 +274,12 @@ class PNG(object):
         length = len(compressed)
         writer.send(Chunk(length, type, compressed, crc))
 
+        logging.debug("Data written.")
+
         writer.send(PNG.IEND)
 
+        logging.debug("IEND chunk written.")
+        logging.debug("PNG saved.")
 
     def _reader(self):
         """
@@ -306,6 +329,7 @@ class PNG(object):
         Raises:
             pyfuck.png.ValidationException
         """
+        logging.debug("PNG pixels setter validation.")
 
         # validation
         prevLen = len(value[0])
@@ -326,9 +350,13 @@ class PNG(object):
                     if not 0 <= component <= 255:
                         raise ValidationException("Invalid colour value.")
 
+        logging.debug("Pixels are valid, generating header.")
+
         # seems ok
         self._pixels = value
         self.header = IHDR.initSimplified(prevLen, len(value))
+
+        logging.debug("PNG pixels set.")
 
 
     def _err(self, msg):

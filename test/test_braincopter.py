@@ -18,10 +18,6 @@ from pyfuck.png import PNG
 class TestBraincopter(unittest.TestCase):
 
 
-    def setUpClass():
-        logging.basicConfig(level=logging.INFO)
-
-
     def test_doctests(self):
         """
         Runs doctests.

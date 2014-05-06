@@ -211,8 +211,8 @@ parser_conversion.add_argument(
 
 # MAIN ==================================================================================================
 if __name__ == '__main__':
+    logging.basicConfig(level=logging.INFO)
     if len(sys.argv) > 1:
-        logging.basicConfig(level=logging.INFO)
         args = parser_main.parse_args()
         if hasattr(args, "output") and args.output == "braincopter" and not args.target:
             parser_main.error("the following argument is required for conversions to Braincopter: -i/--image")

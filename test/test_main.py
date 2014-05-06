@@ -22,10 +22,6 @@ class TestInterpreter(unittest.TestCase):
     hello_worlds = list(map(lambda f: "test/assets/hello_world." + f, ["brainfuck", "brainloller.png", "braincopter.png"]))
 
 
-    def setUpClass():
-        logging.basicConfig(level=logging.INFO)
-
-
     def setUp(self):
         # replace stdout and save orig
         self.orig = sys.stdout
@@ -69,6 +65,7 @@ class TestInterpreter(unittest.TestCase):
                 unlink(tmp.name)
 
 
+logging.basicConfig(level=logging.INFO)
 
 if __name__ == "__main__":
     unittest.main()
