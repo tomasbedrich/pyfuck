@@ -25,6 +25,9 @@ class Interpreter(object):
         self.image = None
         self.contents = None
         self.source = args.source
+        self.brainfuck = Brainfuck()
+        self.brainloller = Brainloller()
+        self.braincopter = Braincopter()
 
         # normalize source
         if self.source.name == "<stdin>":
@@ -81,13 +84,13 @@ class Interpreter(object):
         logging.info("Running source file '{}' of type {}.".format(self.source.name, self.type))
 
         if self.type == "brainfuck":
-            Brainfuck().eval(self.contents)
+            self.brainfuck.eval(self.contents)
 
         elif self.type == "brainloller":
-            Brainloller().eval(self.image)
+            self.brainfuck.eval(self.brainloller.to_brainfuck(self.image))
 
         elif self.type == "braincopter":
-            Braincopter().eval(self.image)
+            self.brainfuck.eval(self.braincopter.to_brainfuck(self.image))
 
 
     def convert(args):

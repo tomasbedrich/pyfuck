@@ -10,6 +10,7 @@ import sys
 
 import pyfuck
 from pyfuck.braincopter import Braincopter
+from pyfuck.brainfuck import Brainfuck
 from pyfuck.png import PNG
 
 
@@ -17,15 +18,11 @@ from pyfuck.png import PNG
 class TestBraincopter(unittest.TestCase):
 
 
-    def setUp(self):
-        self.bl = Braincopter()
-
-
     def test_doctests(self):
         """
         Runs doctests.
         """
-        result = doctest.testmod(pyfuck.braincopter, extraglobs={"b": self.bl})
+        result = doctest.testmod(pyfuck.braincopter)
         self.assertEqual(result.failed, 0)
 
 
@@ -34,7 +31,12 @@ class TestBraincopter(unittest.TestCase):
         logging.info("Loading PNG...")
         image = PNG().load("test/assets/lost_kingdom.png")
         logging.info("PNG load done.")
-        Braincopter().eval(image)
+
+        logging.info("Braincopter => Brainfuck conversion started.")
+        program = Braincopter().to_brainfuck(image)
+        logging.info("Conversion done.")
+        
+        Brainfuck().eval(program)
 
 
 

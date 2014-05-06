@@ -40,26 +40,26 @@ class Brainloller(object):
         self.brainfuck = Brainfuck()
 
 
-    def eval(self, image, stdout=None, stdin=None):
+    def to_brainfuck(self, image):
         """
-        Evaluates the Brainloller program stored in image.
-
-        See:
-            pyfuck.brainfuck.Brainfuck.eval()
+        Converts Brainloller to Brainfuck.
 
         Args:
             image: An image containing the Brainloller program.
-            stdout: see Brainfuck.eval()
-            stdin: see Brainfuck.eval()
 
         Raises:
             AttributeError, EOFError, ValueError
 
+        Returns:
+            A Brainfuck program
+
         Examples:
             >>> image = PNG().load("test/assets/hello_world_brainloller.png")
-            >>> b.eval(image)
+            >>> program = Brainloller().to_brainfuck(image)
+            >>> Brainfuck().eval(program)
             Hello World!
         """
+
         if not isinstance(image, PNG):
             raise AttributeError("Image is not an instance of pyfuck.png.PNG.")
 
@@ -99,7 +99,7 @@ class Brainloller(object):
             else:
                 pcY -= 1
 
-        self.brainfuck.eval("".join(program), stdout, stdin)
+        return "".join(program)
 
 
 

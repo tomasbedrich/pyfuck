@@ -41,20 +41,18 @@ class Braincopter(object):
         self.brainloller = Brainloller()
 
 
-    def eval(self, image, stdout=None, stdin=None):
+    def to_brainfuck(self, image):
         """
-        Evaluates the Braincopter program stored in image.
-
-        See:
-            pyfuck.brainfuck.Brainfuck.eval()
+        Converts Braincopter to Brainfuck.
 
         Args:
             image: An image containing the Braincopter program.
-            stdout: see Brainfuck.eval()
-            stdin: see Brainfuck.eval()
 
         Raises:
             AttributeError, EOFError, ValueError
+
+        Returns:
+            A Brainfuck program
 
         Examples:
             # TODO
@@ -65,7 +63,7 @@ class Braincopter(object):
         newPixels = [[self.COMMANDS[(-2 * r + 3 * g + b) % 11] for r, g, b in row] for row in image.pixels]
         image.pixels = newPixels
 
-        self.brainloller.eval(image, stdout, stdin)
+        return self.brainloller.to_brainfuck(image)
 
 
 

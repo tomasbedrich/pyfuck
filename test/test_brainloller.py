@@ -15,15 +15,11 @@ from pyfuck.brainloller import Brainloller
 class TestBrainloller(unittest.TestCase):
 
 
-    def setUp(self):
-        self.bl = Brainloller()
-
-
     def test_doctests(self):
         """
         Runs doctests.
         """
-        result = doctest.testmod(pyfuck.brainloller, extraglobs={"b": self.bl})
+        result = doctest.testmod(pyfuck.brainloller)
         self.assertEqual(result.failed, 0)
 
 
