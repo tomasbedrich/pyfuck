@@ -336,6 +336,10 @@ class PNG(object):
         raise ValidationException("'{}': ".format(self.filename) + msg)
 
 
+    def __eq__(self, other):
+        return self.pixels == other.pixels
+
+
     def __str__(self):
         super(PNG, self).__str__() + "\n" + \
             "filename: {}".format(self.filename)

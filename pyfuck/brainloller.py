@@ -34,6 +34,10 @@ class Brainloller(object):
         (0, 128, 128): "L" # darkcyan
     }
 
+    COMMANDS_REVERSE = dict(zip(COMMANDS.values(), COMMANDS.keys()))
+    COMMANDS_REVERSE.pop("R")
+    COMMANDS_REVERSE.pop("L")
+
 
     def __init__(self):
         super(Brainloller, self).__init__()
@@ -100,6 +104,33 @@ class Brainloller(object):
                 pcY -= 1
 
         return "".join(program)
+
+
+    def to_brainloller(self, program):
+        """
+        Converts Brainfuck to Brainloller.
+
+        Args:
+            program: A Brainfuck program to encode.
+
+        Returns:
+            A PNG object containing Brainloller image.
+
+        Examples:
+            # TODO maybe?
+        """
+        res = []
+
+        for command in program:
+            try:
+                res.append(self.COMMANDS_REVERSE[command])
+            except KeyError:
+                # unknown characters are comments in Brainfuck
+                continue
+
+        image = PNG()
+        image.pixels = [res]
+        return image
 
 
 

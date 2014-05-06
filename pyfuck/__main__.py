@@ -30,7 +30,11 @@ class Interpreter(object):
 
         # normalize source
         if self.source.name == "<stdin>":
-            self.source = open(sys.stdin.fileno(), "rb")
+            self.source = sys.stdin.fileno()
+
+        # normalize destination
+        if hasattr(self, "destination") and self.destination.name == "<stdout>":
+            self.destination = sys.stdout.fileno()
 
         # decetect source type and load an image
         if self.type == "auto":
@@ -96,45 +100,46 @@ class Interpreter(object):
         if not self.contents and not self.image:
             return
 
+        def out(data):
+            self.destination.write(data)
+
         logging.info("Converting source file '{}' of type {} to {}.".format(self.source.name, self.type, self.output))
 
-        with self.destination:
+        # source = Brainfuck
+        if self.type == "brainfuck":
 
-            # source = Brainfuck
-            if self.type == "brainfuck":
+            if self.output == "brainfuck":
+                out(self.contents)
 
-                if self.output == "brainfuck":
-                    self.brainfuck.eval(self.contents)
+            elif self.output == "brainloller":
+                self.brainloller.to_brainloller(self.contents).save(self.destination)
 
-                elif self.output == "brainloller":
-                    pass
+            elif self.output == "braincopter":
+                pass
 
-                elif self.output == "braincopter":
-                    pass
+        # source = Brainloller
+        elif self.type == "brainloller":
+            
+            if self.output == "brainfuck":
+                out(self.brainloller.to_brainfuck(self.image))
 
-            # source = Brainloller
-            elif self.type == "brainloller":
-                
-                if self.output == "brainfuck":
-                    self.destination.write(self.brainloller.to_brainfuck(self.image))
+            elif self.output == "brainloller":
+                pass
 
-                elif self.output == "brainloller":
-                    pass
+            elif self.output == "braincopter":
+                pass
 
-                elif self.output == "braincopter":
-                    pass
+        # source = Braincopter
+        elif self.type == "braincopter":
 
-            # source = Braincopter
-            elif self.type == "braincopter":
+            if self.output == "brainfuck":
+                out(self.braincopter.to_brainfuck(self.image))
 
-                if self.output == "brainfuck":
-                    self.destination.write(self.braincopter.to_brainfuck(self.image))
+            elif self.output == "brainloller":
+                self.brainloller.to_brainloller(self.braincopter.to_brainfuck(self.image)).save(self.destination)
 
-                elif self.output == "brainloller":
-                    pass
-
-                elif self.output == "braincopter":
-                    pass
+            elif self.output == "braincopter":
+                pass
 
 
 # common parser ====================================
@@ -178,7 +183,7 @@ parser_conversion.add_argument(
     help="Output type.")
 parser_conversion.add_argument(
     "destination",
-    type=argparse.FileType("w"),
+    type=argparse.FileType("wb"),
     nargs="?",
     default=sys.stdout,
     help="Destination filename (default: sys.stdout).")
