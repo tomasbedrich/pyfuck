@@ -16,6 +16,10 @@ from pyfuck.brainfuck import Brainfuck
 class TestBrainfuck(unittest.TestCase):
 
 
+    def setUpClass():
+        logging.basicConfig(level=logging.INFO)
+
+
     def setUp(self):
         self.bf = Brainfuck()
 
@@ -32,9 +36,9 @@ class TestBrainfuck(unittest.TestCase):
     def test_eval(self):
         print("\nInteractive test - please input characters (end test by pressing space bar):")
         self.bf.eval("+[,.--------------------------------]")
+        print()
 
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
     unittest.main()

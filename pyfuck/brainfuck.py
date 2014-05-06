@@ -206,7 +206,7 @@ class Brainfuck(object):
             except IndexError:
                 break
 
-            logging.debug("Processing command: {}".format(compiled[pc]))
+            # logging.debug("Processing command: {}".format(compiled[pc]))
 
             # move one cell left
             if command is "<" and cc > 0:

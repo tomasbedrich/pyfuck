@@ -3,6 +3,7 @@
 
 
 import logging
+import itertools
 
 from pyfuck.png import PNG
 from pyfuck.brainloller import Brainloller
@@ -35,6 +36,9 @@ class Braincopter(object):
         (0, 0, 0) # "X" = any other
     ]
 
+    # for reverse lookup (indexes are important)
+    COMMANDS_REVERSE = [">", "<", "+", "-", ".", ",", "[", "]", "R", "L", None]
+    COMMANDS_REVERSE_LEN = len(COMMANDS_REVERSE)
 
     def __init__(self):
         super(Braincopter, self).__init__()
@@ -64,6 +68,82 @@ class Braincopter(object):
         image.pixels = newPixels
 
         return self.brainloller.to_brainfuck(image)
+
+
+    def to_braincopter(self, program, image):
+        """
+        Does minor colour changes in image to encode given Brainfuck program.
+
+        Args:
+            program: A Brainfuck program to encode.
+            image: An image to change.
+
+        Returns:
+            The image (the image argument).
+
+        Examples:
+            # TODO maybe?
+        """
+
+        def commands():
+            width = len(image.pixels) - 1
+            way_right = True
+            i = 0
+            for command in program:
+                # borders
+                if i == width:
+                    if way_right:
+                        yield "R"
+                        yield "R"
+                    else:
+                        yield "L"
+                        yield "L"
+                    way_right = not way_right
+                    i = 1
+
+                # commands
+                yield command
+                i += 1
+
+            # nop
+            while True:
+                yield None
+
+        command = commands()
+
+        # FIXME performance (maybe)
+        newPixels = [[self._find_similar(next(command), pixel) for pixel in (reversed(row) if i % 2 else row)] for i, row in enumerate(image.pixels)]
+        newPixels = [list(reversed(row)) if i % 2 else row for i, row in enumerate(newPixels)]
+        image.pixels = newPixels
+
+        if next(command):
+            raise IOError("Image is too small to encode whole program.")
+
+        return image
+
+
+    @classmethod
+    def _find_similar(cls, command, pixel):
+        """
+        Returns a similar colour according to desired command.
+
+        Examples:
+            >>> Braincopter._find_similar("+", (0, 0, 0))
+            (0, 0, 2)
+            >>> Braincopter._find_similar(None, (0, 0, 0))
+            (0, 0, 10)
+            >>> Braincopter._find_similar("+", (255, 255, 255))
+            (255, 255, 253)
+            >>> Braincopter._find_similar("L", (255, 255, 253))
+            (255, 255, 249)
+        """
+        r, g, b = pixel
+        b += cls.COMMANDS_REVERSE.index(command) - (-2 * r + 3 * g + b) % 11
+        if b > 255:
+            b -= cls.COMMANDS_REVERSE_LEN
+        elif b < 0:
+            b += cls.COMMANDS_REVERSE_LEN
+        return (r, g, b)
 
 
 

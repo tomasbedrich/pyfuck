@@ -14,6 +14,10 @@ from pyfuck.png import PNG
 class TestPNG(unittest.TestCase):
 
 
+    def setUpClass():
+        logging.basicConfig(level=logging.INFO)
+
+
     def test_doctests(self):
         """
         Runs doctests.
@@ -37,5 +41,4 @@ class TestPNG(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
     unittest.main()

@@ -341,7 +341,7 @@ class PNG(object):
 
 
     def __str__(self):
-        super(PNG, self).__str__() + "\n" + \
+        return super(PNG, self).__str__() + "\n" + \
             "filename: {}".format(self.filename)
 
 

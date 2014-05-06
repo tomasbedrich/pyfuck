@@ -18,6 +18,10 @@ from pyfuck.png import PNG
 class TestBraincopter(unittest.TestCase):
 
 
+    def setUpClass():
+        logging.basicConfig(level=logging.INFO)
+
+
     def test_doctests(self):
         """
         Runs doctests.
@@ -26,20 +30,30 @@ class TestBraincopter(unittest.TestCase):
         self.assertEqual(result.failed, 0)
 
 
+    def test_to_braincopter(self):
+        bc = Braincopter()
+        with open("test/assets/hello_world.bf") as f:
+            contents = f.read()
+        target = PNG().load("test/assets/palette.png")
+        res = bc.to_braincopter(contents, target)
+        self.assertEqual(contents, bc.to_brainfuck(res))
+
+
     @unittest.skipUnless(sys.stdout.isatty(), "Needs interactive shell.")
     def test_eval(self):
+        print("\nInteractive test:")
         logging.info("Loading PNG...")
         image = PNG().load("test/assets/lost_kingdom.png")
         logging.info("PNG load done.")
 
-        logging.info("Braincopter => Brainfuck conversion started.")
+        logging.info("Converting Braincopter to Brainfuck.")
         program = Braincopter().to_brainfuck(image)
         logging.info("Conversion done.")
         
         Brainfuck().eval(program)
+        print()
 
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
     unittest.main()

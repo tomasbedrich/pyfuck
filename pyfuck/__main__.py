@@ -30,17 +30,17 @@ class Interpreter(object):
 
         # normalize source
         if self.source.name == "<stdin>":
-            self.source = sys.stdin.fileno()
+            self.source = open(sys.stdin.fileno(), "rb")
 
         # normalize destination
         if hasattr(self, "destination") and self.destination.name == "<stdout>":
-            self.destination = sys.stdout.fileno()
+            self.destination = open(sys.stdout.fileno(), "wb")
 
         # decetect source type and load an image
         if self.type == "auto":
             self.type = self.guess_type(self.source)
 
-        # type manually set or plaing brainfuck => load either contents or image
+        # type manually set or plain brainfuck => load either contents or image
         if self.type == "brainfuck":
             try:
                 self.source.seek(0)
@@ -51,6 +51,10 @@ class Interpreter(object):
 
         elif not self.image:
             self.image = PNG().load(self.source)
+
+        # load braincopter target as image
+        if hasattr(self, "target"):
+            self.target = PNG().load(self.target)
 
 
     def guess_type(self, target):
@@ -102,44 +106,46 @@ class Interpreter(object):
 
         def out(data):
             self.destination.write(data)
+        def outText(data):
+            self.destination.write(data.encode())
 
-        logging.info("Converting source file '{}' of type {} to {}.".format(self.source.name, self.type, self.output))
+        logging.info("Converting source file '{}' of type {} to '{}' of type {}.".format(self.source.name, self.type, self.destination.name, self.output))
 
         # source = Brainfuck
         if self.type == "brainfuck":
 
             if self.output == "brainfuck":
-                out(self.contents)
+                outText(self.contents)
 
             elif self.output == "brainloller":
                 self.brainloller.to_brainloller(self.contents).save(self.destination)
 
             elif self.output == "braincopter":
-                pass
+                self.braincopter.to_braincopter(self.contents, self.target).save(self.destination)
 
         # source = Brainloller
         elif self.type == "brainloller":
             
             if self.output == "brainfuck":
-                out(self.brainloller.to_brainfuck(self.image))
+                outText(self.brainloller.to_brainfuck(self.image))
 
             elif self.output == "brainloller":
-                pass
+                self.image.save(self.destination) # FIXME
 
             elif self.output == "braincopter":
-                pass
+                self.braincopter.to_braincopter(self.brainloller.to_brainfuck(self.image), self.target).save(self.destination)
 
         # source = Braincopter
         elif self.type == "braincopter":
 
             if self.output == "brainfuck":
-                out(self.braincopter.to_brainfuck(self.image))
+                outText(self.braincopter.to_brainfuck(self.image))
 
             elif self.output == "brainloller":
                 self.brainloller.to_brainloller(self.braincopter.to_brainfuck(self.image)).save(self.destination)
 
             elif self.output == "braincopter":
-                pass
+                self.image.save(self.destination) # FIXME
 
 
 # common parser ====================================
@@ -187,6 +193,12 @@ parser_conversion.add_argument(
     nargs="?",
     default=sys.stdout,
     help="Destination filename (default: sys.stdout).")
+parser_conversion.add_argument(
+    "-i", "--image",
+    dest="target",
+    metavar="<image>",
+    type=argparse.FileType("rb"),
+    help="A PNG file where to encode the Braincopter data. Required for all conversions to Braincopter.")
 
 
 # MAIN ==================================================================================================
@@ -194,7 +206,9 @@ if __name__ == '__main__':
     if len(sys.argv) > 1:
         logging.basicConfig(level=logging.INFO)
         args = parser_main.parse_args()
+        if hasattr(args, "output") and args.output == "braincopter" and not args.target:
+            parser_main.error("the following argument is required for conversions to Braincopter: -i/--image")
         interpreter = Interpreter(args)
         getattr(interpreter, args.func)()
     else:
-        parser_main.parse_args(["-h"])
+        parser_main.error("please specify an action")
