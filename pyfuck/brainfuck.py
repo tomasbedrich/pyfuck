@@ -1,15 +1,13 @@
 #!/usr/bin/env python3
 
 
-
-import logging
 import sys
 from collections import namedtuple
 # TODO use https://github.com/Feneric/doxypypy
 
 
-
 class Brainfuck(object):
+
     """
     Represents a basic Brainfuck! interpreter.
 
@@ -20,8 +18,10 @@ class Brainfuck(object):
     -   decrement (decrease by one) the byte at the data pointer.
     .   output the byte at the data pointer.
     ,   accept one byte of input, storing its value in the byte at the data pointer.
-    [   if the byte at the data pointer is zero, then instead of moving the instruction pointer forward to the next command, jump it forward to the command after the matching ] command.
-    ]   if the byte at the data pointer is nonzero, then instead of moving the instruction pointer forward to the next command, jump it back to the command after the matching [ command.
+    [   if the byte at the data pointer is zero, then instead of moving the instruction pointer forward
+        to the next command, jump it forward to the command after the matching ] command.
+    ]   if the byte at the data pointer is nonzero, then instead of moving the instruction pointer forward
+        to the next command, jump it back to the command after the matching [ command.
     !   everything after this character is considered as user input.
 
     Author:
@@ -34,14 +34,11 @@ class Brainfuck(object):
         # TODO
     """
 
-
     COMMANDS = "<>+-.,[]"
-
 
     def __init__(self):
         super(Brainfuck, self).__init__()
         self._getch = Brainfuck._find_getch()
-
 
     @staticmethod
     def _find_getch():
@@ -50,7 +47,7 @@ class Brainfuck(object):
 
         Author:
             Louis
-        
+
         See:
             http://stackoverflow.com/questions/510357/python-read-a-single-character-from-the-user
         """
@@ -63,6 +60,7 @@ class Brainfuck(object):
 
         # POSIX system. Create and return a getch that manipulates the tty.
         import tty
+
         def _getch():
             fd = sys.stdin.fileno()
             old_settings = termios.tcgetattr(fd)
@@ -74,7 +72,6 @@ class Brainfuck(object):
             return ch
 
         return _getch
-
 
     def preprocess(self, program):
         """
@@ -104,7 +101,6 @@ class Brainfuck(object):
         except ValueError:
             input = ""
         return namedtuple("Program", ['program', 'input'])(program, input)
-
 
     def _compile(self, program):
         """
@@ -150,7 +146,6 @@ class Brainfuck(object):
 
         return compiled
 
-
     def eval(self, program, stdout=None, stdin=None):
         """
         Evaluates the Brainfuck! program.
@@ -164,14 +159,15 @@ class Brainfuck(object):
             EOFError, ValueError, IndexError
 
         Examples:
-            >>> b.eval("++++++++++[>+++++++>++++++++++>+++>+<<<<-]>++.>+.+++++++..+++.>++.<<+++++++++++++++.>.+++.------.--------.>+.>.")
+            >>> b.eval("++++++++++[>+++++++>++++++++++>+++>+<<<<-]>++.>+.+++++" + \
+                       "++..+++.>++.<<+++++++++++++++.>.+++.------.--------.>+.>.")
             Hello World!
             >>> b.eval(",+.", stdin="a")
             b
             >>> b.eval(",+.!a")
             b
-            >>> b.eval("+[,.--------------------------------]", stdin="brainfuck_rulez! ")
-            brainfuck_rulez! 
+            >>> b.eval("+[,.---------------------------------]", stdin="brainfuck rulez!")
+            brainfuck rulez!
             >>> # cell underflow and overflow detection
             >>> b.eval("-,.", stdin="a")
             a
@@ -185,7 +181,7 @@ class Brainfuck(object):
 
         if stdout is None:
             stdout = sys.stdout
-        
+
         if preprocessed.input:
             stdin = iter(preprocessed.input)
         else:
@@ -194,9 +190,9 @@ class Brainfuck(object):
             except TypeError:
                 stdin = None
 
-        pc = 0 # = program counter
-        cc = 0 # = cell counter
-        cc_max = 0 # = cell counter max
+        pc = 0  # = program counter
+        cc = 0  # = cell counter
+        cc_max = 0  # = cell counter max
         cells = bytearray(1)
 
         while True:
@@ -258,7 +254,6 @@ class Brainfuck(object):
                 pc = compiled[pc][1]
 
             pc += 1
-
 
 
 if __name__ == '__main__':

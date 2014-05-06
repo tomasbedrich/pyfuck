@@ -1,18 +1,17 @@
 #!/usr/bin/env python3
 
 
-
 import logging
 
 from pyfuck.png import PNG
 from pyfuck.brainfuck import Brainfuck
 
 
-
 class Brainloller(object):
+
     """
     Extends Brainfuck! interpreter to Brainloller.
-    
+
     Author:
         Tomas Bedrich
 
@@ -20,29 +19,26 @@ class Brainloller(object):
         http://esolangs.org/wiki/Brainloller
     """
 
-
     COMMANDS = {
-        (255, 0, 0): ">", # red
-        (128, 0, 0): "<", # darkred
-        (0, 255, 0): "+", # green
-        (0, 128, 0): "-", # darkgreen
-        (0, 0, 255): ".", # blue
-        (0, 0, 128): ",", # darkblue
-        (255, 255, 0): "[", # yellow
-        (128, 128, 0): "]", # darkyellow
-        (0, 255, 255): "R", # cyan
-        (0, 128, 128): "L" # darkcyan
+        (255, 0, 0): ">",  # red
+        (128, 0, 0): "<",  # darkred
+        (0, 255, 0): "+",  # green
+        (0, 128, 0): "-",  # darkgreen
+        (0, 0, 255): ".",  # blue
+        (0, 0, 128): ",",  # darkblue
+        (255, 255, 0): "[",  # yellow
+        (128, 128, 0): "]",  # darkyellow
+        (0, 255, 255): "R",  # cyan
+        (0, 128, 128): "L"  # darkcyan
     }
 
     COMMANDS_REVERSE = dict(zip(COMMANDS.values(), COMMANDS.keys()))
     COMMANDS_REVERSE.pop("R")
     COMMANDS_REVERSE.pop("L")
 
-
     def __init__(self):
         super(Brainloller, self).__init__()
         self.brainfuck = Brainfuck()
-
 
     def to_brainfuck(self, image):
         """
@@ -69,10 +65,10 @@ class Brainloller(object):
 
         program = []
 
-        pcX = 0 # = program counter X
-        pcY = 0 # = program counter Y
+        pcX = 0  # = program counter X
+        pcY = 0  # = program counter Y
         NORTH, EAST, SOUTH, WEST = range(4)
-        way = EAST # program counter way
+        way = EAST  # program counter way
 
         while (0 <= pcX < image.header.width) and (0 <= pcY < image.header.height):
 
@@ -105,7 +101,6 @@ class Brainloller(object):
 
         return "".join(program)
 
-
     def to_brainloller(self, program):
         """
         Converts Brainfuck to Brainloller.
@@ -131,7 +126,6 @@ class Brainloller(object):
         image = PNG()
         image.pixels = [res]
         return image
-
 
 
 if __name__ == '__main__':

@@ -1,19 +1,15 @@
 #!/usr/bin/env python3
 
 
-
-import logging
-import itertools
-
 from pyfuck.png import PNG
 from pyfuck.brainloller import Brainloller
 
 
-
 class Braincopter(object):
+
     """
     Extends Brainloller interpreter to Braincopter.
-    
+
     Author:
         Tomas Bedrich
 
@@ -21,19 +17,18 @@ class Braincopter(object):
         http://esolangs.org/wiki/Braincopter
     """
 
-
     COMMANDS = [
-        (255, 0, 0), # ">" = red
-        (128, 0, 0), # "<" = darkred
-        (0, 255, 0), # "+" = green
-        (0, 128, 0), # "-" = darkgreen
-        (0, 0, 255), # "." = blue
-        (0, 0, 128), # "," = darkblue
-        (255, 255, 0), # "[" = yellow
-        (128, 128, 0), # "]" = darkyellow
-        (0, 255, 255), # "R" = cyan
-        (0, 128, 128), # "L" = darkcyan
-        (0, 0, 0) # "X" = any other
+        (255, 0, 0),  # ">" = red
+        (128, 0, 0),  # "<" = darkred
+        (0, 255, 0),  # "+" = green
+        (0, 128, 0),  # "-" = darkgreen
+        (0, 0, 255),  # "." = blue
+        (0, 0, 128),  # "," = darkblue
+        (255, 255, 0),  # "[" = yellow
+        (128, 128, 0),  # "]" = darkyellow
+        (0, 255, 255),  # "R" = cyan
+        (0, 128, 128),  # "L" = darkcyan
+        (0, 0, 0)  # "X" = any other
     ]
 
     # for reverse lookup (indexes are important)
@@ -43,7 +38,6 @@ class Braincopter(object):
     def __init__(self):
         super(Braincopter, self).__init__()
         self.brainloller = Brainloller()
-
 
     def to_brainfuck(self, image):
         """
@@ -68,7 +62,6 @@ class Braincopter(object):
         image.pixels = newPixels
 
         return self.brainloller.to_brainfuck(image)
-
 
     def to_braincopter(self, program, image):
         """
@@ -112,7 +105,9 @@ class Braincopter(object):
         command = commands()
 
         # FIXME performance (maybe)
-        newPixels = [[self._find_similar(next(command), pixel) for pixel in (reversed(row) if i % 2 else row)] for i, row in enumerate(image.pixels)]
+        newPixels = [[self._find_similar(next(command), pixel)
+                     for pixel in (reversed(row) if i % 2 else row)]
+                     for i, row in enumerate(image.pixels)]
         newPixels = [list(reversed(row)) if i % 2 else row for i, row in enumerate(newPixels)]
         image.pixels = newPixels
 
@@ -120,7 +115,6 @@ class Braincopter(object):
             raise IOError("Image is too small to encode whole program.")
 
         return image
-
 
     @classmethod
     def _find_similar(cls, command, pixel):
@@ -144,7 +138,6 @@ class Braincopter(object):
         elif b < 0:
             b += cls.COMMANDS_REVERSE_LEN
         return (r, g, b)
-
 
 
 if __name__ == '__main__':

@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 
-
 import argparse
 import sys
 import logging
@@ -12,13 +11,10 @@ from pyfuck.brainloller import Brainloller
 from pyfuck.braincopter import Braincopter
 
 
-
 class Interpreter(object):
 
-
     # for determining image type: braincopter / brainloller
-    _THRESHOLD = 0.8 # percent
-
+    _THRESHOLD = 0.8  # percent
 
     def __init__(self, args):
         self.__dict__ = args.__dict__
@@ -58,12 +54,10 @@ class Interpreter(object):
                 image = PNG().load(self.target)
             self.target = image
 
-
     def __del__(self):
         self.source.close()
         if hasattr(self, "destination"):
             self.destination.close()
-
 
     def guess_type(self, target):
         try:
@@ -91,7 +85,6 @@ class Interpreter(object):
         logging.info("Detected source type: {} ({}).".format(res, msg))
         return res
 
-
     def run(self):
         if not self.contents and not self.image:
             return
@@ -107,17 +100,18 @@ class Interpreter(object):
         elif self.type == "braincopter":
             self.brainfuck.eval(self.braincopter.to_brainfuck(self.image))
 
-
     def convert(self):
         if not self.contents and not self.image:
             return
 
         def out(data):
             self.destination.write(data)
+
         def outText(data):
             self.destination.write(data.encode())
 
-        logging.info("Converting source file '{}' of type {} to '{}' of type {}.".format(self.source.name, self.type, self.destination.name, self.output))
+        logging.info("Converting source file '{}' of type {} to '{}' of type {}.".format(
+            self.source.name, self.type, self.destination.name, self.output))
 
         # source = Brainfuck
         if self.type == "brainfuck":
@@ -133,7 +127,7 @@ class Interpreter(object):
 
         # source = Brainloller
         elif self.type == "brainloller":
-            
+
             if self.output == "brainfuck":
                 outText(self.brainloller.to_brainfuck(self.image))
 
@@ -141,7 +135,8 @@ class Interpreter(object):
                 self.image.save(self.destination)
 
             elif self.output == "braincopter":
-                self.braincopter.to_braincopter(self.brainloller.to_brainfuck(self.image), self.target).save(self.destination)
+                self.braincopter.to_braincopter(
+                    self.brainloller.to_brainfuck(self.image), self.target).save(self.destination)
 
         # source = Braincopter
         elif self.type == "braincopter":
@@ -178,7 +173,8 @@ parser_common.add_argument(
 
 
 # main parser ====================================
-parser_main = argparse.ArgumentParser(prog="pyfuck", description="Interpreter and converter for Brainfuck, Brainloller and Braincopter scripts.")
+parser_main = argparse.ArgumentParser(
+    prog="pyfuck", description="Interpreter and converter for Brainfuck, Brainloller and Braincopter scripts.")
 actions = parser_main.add_subparsers(title="actions", help="Available actions.")
 
 
@@ -188,7 +184,8 @@ parser_run.set_defaults(func="run")
 
 
 # conversion subparser ====================================
-parser_conversion = actions.add_parser("convert", parents=[parser_common], description="Converts one format to another.")
+parser_conversion = actions.add_parser(
+    "convert", parents=[parser_common], description="Converts one format to another.")
 parser_conversion.set_defaults(func="convert")
 parser_conversion.add_argument(
     "-o", "--output",
