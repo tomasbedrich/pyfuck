@@ -21,10 +21,9 @@ class Interpreter(object):
 
 
     def __init__(self, args):
-        self.type = args.type
+        self.__dict__ = args.__dict__
         self.image = None
         self.contents = None
-        self.source = args.source
         self.brainfuck = Brainfuck()
         self.brainloller = Brainloller()
         self.braincopter = Braincopter()
@@ -93,8 +92,49 @@ class Interpreter(object):
             self.brainfuck.eval(self.braincopter.to_brainfuck(self.image))
 
 
-    def convert(args):
-        pass
+    def convert(self):
+        if not self.contents and not self.image:
+            return
+
+        logging.info("Converting source file '{}' of type {} to {}.".format(self.source.name, self.type, self.output))
+
+        with self.destination:
+
+            # source = Brainfuck
+            if self.type == "brainfuck":
+
+                if self.output == "brainfuck":
+                    self.brainfuck.eval(self.contents)
+
+                elif self.output == "brainloller":
+                    pass
+
+                elif self.output == "braincopter":
+                    pass
+
+            # source = Brainloller
+            elif self.type == "brainloller":
+                
+                if self.output == "brainfuck":
+                    self.destination.write(self.brainloller.to_brainfuck(self.image))
+
+                elif self.output == "brainloller":
+                    pass
+
+                elif self.output == "braincopter":
+                    pass
+
+            # source = Braincopter
+            elif self.type == "braincopter":
+
+                if self.output == "brainfuck":
+                    self.destination.write(self.braincopter.to_brainfuck(self.image))
+
+                elif self.output == "brainloller":
+                    pass
+
+                elif self.output == "braincopter":
+                    pass
 
 
 # common parser ====================================
