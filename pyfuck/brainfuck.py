@@ -3,7 +3,6 @@
 
 import sys
 from collections import namedtuple
-# TODO use https://github.com/Feneric/doxypypy
 
 
 class Brainfuck(object):
@@ -29,9 +28,6 @@ class Brainfuck(object):
 
     See:
         http://en.wikipedia.org/wiki/Brainfuck
-
-    Examples:
-        # TODO
     """
 
     COMMANDS = "<>+-.,[]"

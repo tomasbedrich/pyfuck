@@ -53,7 +53,8 @@ class Braincopter(object):
             A Brainfuck program
 
         Examples:
-            # TODO
+            >>> print(Braincopter().to_brainfuck(PNG().load("test/assets/hello_world.braincopter.png")))
+            ++++++++++[>+++++++>++++++++++>+++>+<<<<-]>++.>+.+++++++..+++.>++.<<+++++++++++++++.>.+++.------.--------.>+.>.
         """
         if not isinstance(image, PNG):
             raise AttributeError("Image is not an instance of pyfuck.png.PNG.")
@@ -75,7 +76,10 @@ class Braincopter(object):
             The image (the image argument).
 
         Examples:
-            # TODO maybe?
+            >>> target = PNG().load("test/assets/earth.png")
+            >>> old_pixels = target.pixels
+            >>> Braincopter().to_braincopter(".", target).pixels == old_pixels
+            False
         """
 
         def commands():

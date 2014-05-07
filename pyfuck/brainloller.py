@@ -112,7 +112,12 @@ class Brainloller(object):
             A PNG object containing Brainloller image.
 
         Examples:
-            # TODO maybe?
+            >>> image = Brainloller().to_brainloller(".")
+            >>> print(image.header) #doctest: +ELLIPSIS
+            <pyfuck.png.IHDR ...
+            width: 1
+            height: 1
+            ...
         """
         res = []
 

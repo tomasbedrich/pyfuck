@@ -28,7 +28,11 @@ class TestPNG(unittest.TestCase):
         self.assertEqual(p.load("test/assets/filterAverage.png").pixels[-2][-1], (8, 70, 255))
         self.assertEqual(p.load("test/assets/filterPaeth.png").pixels[-2][-1], (8, 70, 255))
 
-    # TODO add palette test
+    def test_palette(self):
+        """
+        Tests PNG palette.
+        """
+        self.assertEqual(PNG().load("test/assets/palette.png").pixels[-1][-1], (0, 0, 255))
 
 
 if __name__ == "__main__":
